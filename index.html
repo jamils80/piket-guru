@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jurnal Piket Guru</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; }
+    .card { background-color: rgba(255, 255, 255, 0.95); border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); }
+    .card-header { background-color: #0d6efd; color: white; text-align: center; font-weight: bold; border-radius: 16px 16px 0 0 !important; }
+    .card-header-antrean { background-color: #ffc107; color: #212529; font-weight: bold; border-radius: 16px 16px 0 0 !important; }
+    .logo-beranda { max-width: 240px; width: 100%; height: auto; margin-bottom: 12px; }
+    .btn-submit { background-color: #0d6efd; color: white; width: 100%; font-weight: bold; }
+  </style>
+</head>
+<body class="p-3 p-md-5">
+
+  <div class="container" style="max-width: 650px;">
+    <!-- KARTU FORM UTAMA -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-4">
+        <div id="logoContainer"></div>
+        <h4 class="mb-1 text-uppercase fw-bold" id="judulUtama">JURNAL PIKET GURU</h4>
+        <h5 class="fw-semibold" id="subJudulUtama">TAHUN PELAJARAN</h5>
+      </div>
+      <div class="card-body p-4">
+        <div id="alertSuccess" class="alert alert-success d-none" role="alert">
+          Data izin berhasil dicatat! ID: <strong id="resId"></strong>
+          <button type="button" class="btn btn-sm btn-dark ms-2 fw-bold" id="btnCetakTerakhir" onclick="cetakNotaLangsung()">🖨️ Cetak Nota</button>
+        </div>
+
+        <form id="piketForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nama Guru Piket</label>
+            <select class="form-select" id="guruPiket" required>
+              <option value="" selected disabled>Memuat data guru...</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Kelas / Jurusan</label>
+            <select class="form-select" id="kelas" onchange="loadSiswa()" required>
+              <option value="" selected disabled>Memuat data kelas...</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nama Siswa</label>
+            <select class="form-select" id="nama" disabled required>
+              <option value="" selected disabled>-- Pilih Kelas Terlebih Dahulu --</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Jenis Perizinan</label>
+            <select class="form-select" id="jenisIzin" required>
+              <option value="" selected disabled>-- Pilih Jenis Izin --</option>
+              <option value="Izin Masuk (Terlambat)">Izin Masuk (Terlambat)</option>
+              <option value="Izin Masuk (Alasan Lain)">Izin Masuk (Alasan Lain)</option>
+              <option value="Izin Keluar (Sakit/UKS)">Izin Keluar (Sakit / Ke UKS)</option>
+              <option value="Izin Keluar (Keperluan Lainnya)">Izin Keluar (Keperluan Lainnya)</option>
+              <option value="Izin Keluar (Tugas Sekolah)">Izin Keluar (Tugas Sekolah/Dinas)</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Alasan / Keterangan Detail</label>
+            <textarea class="form-control" id="alasan" rows="3" placeholder="Jelaskan alasan perizinan..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-submit py-2 mb-3" id="btnSubmit">Simpan & Terbitkan Izin</button>
+        </form>
+
+        <hr>
+
+        <button type="button" class="btn btn-warning w-100 fw-bold py-2 mb-3" onclick="bukaModalIzinGuru()">
+          👨‍🏫 Catat Izin / Absensi Guru
+        </button>
+
+        <div class="mb-3">
+          <label for="tglCetak" class="form-label fw-semibold">Pilih Tanggal Jurnal yang Ingin Dicetak</label>
+          <input type="date" class="form-control" id="tglCetak">
+        </div>
+
+        <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold" id="btnPrint" onclick="cetakJurnalHarian()">
+          🖨️ Cetak Jurnal Piket
+        </button>
+      </div>
+    </div>
+
+    <!-- ANTREAN PENGAJUAN -->
+    <div class="card shadow mb-4">
+      <div class="card-header card-header-antrean py-3 d-flex justify-content-between align-items-center">
+        <span>📋 Antrean Pengajuan Izin dari Guru Kelas</span>
+        <button class="btn btn-sm btn-dark" onclick="loadAntrean()">🔄 Refresh</button>
+      </div>
+      <div class="card-body p-3">
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.9rem;">
+            <thead class="table-light text-center">
+              <tr>
+                <th>Kode ID & Siswa</th>
+                <th>Kelas & Alasan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="bodyAntrean">
+              <tr><td colspan="3" class="text-center text-muted">Memuat data antrean...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FORM INPUT IZIN GURU -->
+  <div class="modal fade" id="modalInputGuru" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 14px;">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold">Catat Izin / Absensi Guru</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="formIzinGuru">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Nama Guru Yang Izin</label>
+              <select class="form-select" id="guruIzinNama" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Mata Pelajaran</label>
+              <input type="text" class="form-control" id="guruIzinMapel" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Status Kehadiran</label>
+              <select class="form-select" id="guruIzinStatus" required>
+                <option value="DL">DL (Dinas Luar)</option>
+                <option value="S">S (Sakit)</option>
+                <option value="I">I (Izin)</option>
+                <option value="A">A (Alpha)</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Tugas / Catatan</label>
+              <textarea class="form-control" id="guruIzinTugas" rows="2" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2" id="btnSimpanGuru">Simpan Data Guru</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <iframe id="printFrame" style="display:none;"></iframe>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+
+    let modalGuruObj = null;
+    let lastDataIzinSimpan = null;
+    let appAssets = {};
+
+    window.onload = function() {
+      modalGuruObj = new bootstrap.Modal(document.getElementById('modalInputGuru'));
+      document.getElementById('tglCetak').valueAsDate = new Date();
+
+      const now = new Date();
+      const bulan = now.getMonth() + 1;
+      const tahun = now.getFullYear();
+      document.getElementById('judulUtama').innerText = `JURNAL PIKET GURU SEMESTER (${bulan > 6 ? "GANJIL" : "GENAP"})`;
+      document.getElementById('subJudulUtama').innerText = `TAHUN PELAJARAN (${bulan > 6 ? tahun + "/" + (tahun + 1) : (tahun - 1) + "/" + tahun})`;
+
+      // Fetch Assets
+      fetch(`${WEB_APP_URL}?action=getAppAssets`)
+        .then(res => res.json())
+        .then(assets => {
+          appAssets = assets;
+          if (assets.logoBeranda) {
+            document.getElementById('logoContainer').innerHTML = `<img src="${assets.logoBeranda}" class="logo-beranda" alt="Logo">`;
+          }
+        });
+
+      // Fetch Master Data
+      fetch(`${WEB_APP_URL}?action=getMasterData`)
+        .then(res => res.json())
+        .then(data => {
+          const gSel = document.getElementById('guruPiket');
+          gSel.innerHTML = '<option value="" selected disabled>-- Pilih Guru Piket --</option>';
+          data.guru.forEach(g => { gSel.innerHTML += `<option value="${g}">${g}</option>`; });
+
+          const kSel = document.getElementById('kelas');
+          kSel.innerHTML = '<option value="" selected disabled>-- Pilih Kelas --</option>';
+          data.kelas.forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
+        });
+
+      loadAntrean();
+    };
+
+    function loadSiswa() {
+      const kelas = document.getElementById('kelas').value;
+      const sSel = document.getElementById('nama');
+      sSel.disabled = true;
+
+      fetch(`${WEB_APP_URL}?action=getSiswaByKelas&kelas=${encodeURIComponent(kelas)}`)
+        .then(res => res.json())
+        .then(list => {
+          sSel.innerHTML = '<option value="" selected disabled>-- Pilih Nama Siswa --</option>';
+          list.forEach(s => { sSel.innerHTML += `<option value="${s}">${s}</option>`; });
+          sSel.disabled = false;
+        });
+    }
+
+    document.getElementById('piketForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+
+      const payload = {
+        action: "simpanPerizinan",
+        guruPiket: document.getElementById('guruPiket').value,
+        kelas: document.getElementById('kelas').value,
+        nama: document.getElementById('nama').value,
+        jenisIzin: document.getElementById('jenisIzin').value,
+        alasan: document.getElementById('alasan').value
+      };
+
+      fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          document.getElementById('resId').innerText = res.id;
+          document.getElementById('alertSuccess').classList.remove('d-none');
+          lastDataIzinSimpan = { ...payload, id: res.id, timestamp: new Date().toLocaleString('id-ID'), status: 'Disetujui' };
+          cetakNota(lastDataIzinSimpan);
+          document.getElementById('piketForm').reset();
+          btn.disabled = false;
+        });
+    });
+
+    function bukaModalIzinGuru() {
+      document.getElementById('guruIzinNama').innerHTML = document.getElementById('guruPiket').innerHTML;
+      modalGuruObj.show();
+    }
+
+    document.getElementById('formIzinGuru').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const payload = {
+        action: "simpanIzinGuru",
+        nama: document.getElementById('guruIzinNama').value,
+        mapel: document.getElementById('guruIzinMapel').value,
+        status: document.getElementById('guruIzinStatus').value,
+        tugas: document.getElementById('guruIzinTugas').value
+      };
+
+      fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(() => {
+          modalGuruObj.hide();
+          document.getElementById('formIzinGuru').reset();
+          alert("Data izin guru berhasil dicatat!");
+        });
+    });
+
+    function loadAntrean() {
+      fetch(`${WEB_APP_URL}?action=getAntreanPengajuan`)
+        .then(res => res.json())
+        .then(list => {
+          const tbody = document.getElementById('bodyAntrean');
+          if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-success fw-bold">Tidak ada antrean.</td></tr>';
+            return;
+          }
+          let html = '';
+          list.forEach(item => {
+            html += `<tr>
+              <td><span class="badge bg-primary">${item.id}</span><br><strong>${item.nama}</strong></td>
+              <td><span class="badge bg-secondary">${item.kelas}</span><br><small>${item.alasan}</small></td>
+              <td class="text-center"><button class="btn btn-sm btn-success fw-bold" onclick="setujuiIzin('${item.id}')">Setujui</button></td>
+            </tr>`;
+          });
+          tbody.innerHTML = html;
+        });
+    }
+
+    function setujuiIzin(idIzin) {
+      const guruPiket = document.getElementById('guruPiket').value;
+      if (!guruPiket) { alert("Pilih Guru Piket terlebih dahulu!"); return; }
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "setujuiIzinPiket", idIzin: idIzin, namaGuruPiket: guruPiket })
+      })
+      .then(res => res.json())
+      .then(() => { loadAntrean(); });
+    }
+
+    function cetakNotaLangsung() { if (lastDataIzinSimpan) cetakNota(lastDataIzinSimpan); }
+
+    function cetakNota(item) {
+      const htmlNota = `
+        <!DOCTYPE html><html><head><title>Print Nota</title>
+        <style>body{font-family:'Courier New',monospace;font-size:10px;width:72mm;} .text-center{text-align:center;} .divider{border-top:1px dashed #000;margin:6px 0;}</style>
+        </head><body>
+          <div class="text-center">
+            <h4>SURAT IZIN SISWA</h4><p>SMK NEGERI 1 PURWOASRI</p>
+          </div>
+          <div class="divider"></div>
+          <p>ID: <b>${item.id}</b><br>Siswa: <b>${item.nama}</b><br>Kelas: ${item.kelas}<br>Izin: ${item.jenisIzin}<br>Alasan: ${item.alasan}</p>
+          <div class="divider"></div>
+        </body></html>`;
+      const frame = document.getElementById('printFrame');
+      frame.contentWindow.document.open();
+      frame.contentWindow.document.write(htmlNota);
+      frame.contentWindow.document.close();
+      setTimeout(() => { frame.contentWindow.focus(); frame.contentWindow.print(); }, 400);
+    }
+
+    function cetakJurnalHarian() {
+      const tgl = document.getElementById('tglCetak').value;
+      if (!tgl) return alert("Pilih tanggal!");
+      fetch(`${WEB_APP_URL}?action=getLaporanHarian&tgl=${tgl}`)
+        .then(res => res.json())
+        .then(laporan => {
+          alert(`Laporan siap dicetak. Siswa: ${laporan.siswa.length}, Guru: ${laporan.guru.length}`);
+        });
+    }
+  </script>
+</body>
+</html>
