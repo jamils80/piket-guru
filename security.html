@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifikasi Security Gerbang</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="p-3" style="background:#f0f2f5;">
+  <div class="container" style="max-width: 600px;">
+    <!-- FORM PENGAJUAN IZIN MASUK BY SECURITY -->
+    <div class="card shadow mb-4 border-0">
+      <div class="card-header bg-primary text-white text-center py-3">
+        <h5 class="mb-0">🛡️ Form Pengajuan Izin Masuk (Security)</h5>
+      </div>
+      <div class="card-body p-4">
+        <form id="formSecurity">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nama Security / Petugas</label>
+            <select class="form-select border-primary" id="namaPetugas" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Kelas / Jurusan</label>
+            <select class="form-select" id="kelas" onchange="loadSiswa()" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nama Siswa</label>
+            <select class="form-select" id="nama" disabled required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Jenis Izin Masuk</label>
+            <select class="form-select" id="jenisIzin" required>
+              <option value="Izin Masuk (Terlambat)">Izin Masuk (Terlambat)</option>
+              <option value="Izin Masuk (Alasan Lain)">Izin Masuk (Alasan Lain)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Alasan / Keterangan Terlambat</label>
+            <textarea class="form-control" id="alasan" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Kirim Pengajuan Izin Masuk</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TABEL RIWAYAT & VERIFIKASI SELESAI -->
+    <div class="card shadow mb-4 border-0">
+      <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold">📋 Verifikasi Perizinan Gerbang</span>
+        <button class="btn btn-sm btn-light fw-bold" onclick="loadRiwayat()">🔄 Refresh</button>
+      </div>
+      <div class="card-body p-3">
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0" style="font-size:0.88rem;">
+            <thead class="table-light text-center">
+              <tr>
+                <th>Kode & Siswa</th>
+                <th>Detail</th>
+                <th>Aksi / Status</th>
+              </tr>
+            </thead>
+            <tbody id="bodyRiwayat">
+              <tr><td colspan="3" class="text-center text-muted">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+
+    window.onload = function() {
+      fetch(`${WEB_APP_URL}?action=getMasterData`)
+        .then(res => res.json())
+        .then(data => {
+          const gSel = document.getElementById('namaPetugas');
+          gSel.innerHTML = '<option value="" selected disabled>Pilih Nama Security...</option>';
+          data.guru.forEach(g => { gSel.innerHTML += `<option value="${g}">${g}</option>`; });
+
+          const kSel = document.getElementById('kelas');
+          kSel.innerHTML = '<option value="" selected disabled>Pilih Kelas...</option>';
+          data.kelas.forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
+        });
+
+      loadRiwayat();
+    };
+
+    function loadSiswa() {
+      const kelas = document.getElementById('kelas').value;
+      const sSel = document.getElementById('nama');
+      sSel.disabled = true;
+
+      fetch(`${WEB_APP_URL}?action=getSiswaByKelas&kelas=${encodeURIComponent(kelas)}`)
+        .then(res => res.json())
+        .then(list => {
+          sSel.innerHTML = '<option value="" selected disabled>-- Pilih Nama Siswa --</option>';
+          list.forEach(s => { sSel.innerHTML += `<option value="${s}">${s}</option>`; });
+          sSel.disabled = false;
+        });
+    }
+
+    document.getElementById('formSecurity').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const payload = {
+        action: "simpanPengajuanGuruKelas",
+        petugas: document.getElementById('namaPetugas').value,
+        kelas: document.getElementById('kelas').value,
+        nama: document.getElementById('nama').value,
+        jenisIzin: document.getElementById('jenisIzin').value,
+        alasan: document.getElementById('alasan').value
+      };
+
+      fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          Swal.fire('Berhasil!', 'Pengajuan izin masuk dikirim. Kode ID: ' + res.id, 'success');
+          document.getElementById('formSecurity').reset();
+          loadRiwayat();
+        });
+    });
+
+    function loadRiwayat() {
+      fetch(`${WEB_APP_URL}?action=getRiwayatIzinGuru`)
+        .then(res => res.json())
+        .then(list => {
+          const tbody = document.getElementById('bodyRiwayat');
+          if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Belum ada data.</td></tr>';
+            return;
+          }
+
+          // Filter yang belum selesai
+          list = list.filter(item => (item.status || '').toLowerCase().indexOf('selesai') === -1);
+
+          let html = '';
+          list.forEach(item => {
+            let statusBtn = '';
+            if ((item.status || '').toLowerCase().indexOf('disetujui') !== -1) {
+              statusBtn = `<button class="btn btn-sm btn-success fw-bold" onclick="markSelesai('${item.id}')">✓ Verifikasi Selesai</button>`;
+            } else {
+              statusBtn = `<span class="badge bg-warning text-dark">Menunggu Piket</span>`;
+            }
+
+            html += `<tr>
+              <td><span class="badge bg-primary">${item.id}</span><br><strong>${item.nama}</strong><br><small>${item.kelas}</small></td>
+              <td><small>${item.jenisIzin}<br>${item.alasan}</small></td>
+              <td class="text-center">${statusBtn}</td>
+            </tr>`;
+          });
+          tbody.innerHTML = html || '<tr><td colspan="3" class="text-center text-muted">Semua perizinan telah selesai.</td></tr>';
+        });
+    }
+
+    function markSelesai(idIzin) {
+      const namaSecurity = document.getElementById('namaPetugas').value;
+      if (!namaSecurity) { alert("Pilih Nama Security di form atas terlebih dahulu!"); return; }
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "konfirmasiSelesaiIzin", idIzin: idIzin, namaPetugas: namaSecurity })
+      })
+      .then(res => res.json())
+      .then(res => {
+        Swal.fire('Berhasil!', res.message, 'success');
+        loadRiwayat();
+      });
+    }
+  </script>
+</body>
+</html>
