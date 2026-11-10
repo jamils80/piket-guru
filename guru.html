@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengajuan Guru Kelas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="p-3" style="background:#f8f9fa;">
+  <div class="container" style="max-width: 600px;">
+    <div class="card shadow mb-4 border-0" style="border-radius: 12px;">
+      <div class="card-header bg-success text-white text-center py-3" style="border-radius: 12px 12px 0 0;">
+        <h5 class="mb-0">Form Pengajuan Izin Keluar</h5>
+        <small>Pengajuan Guru Pengajar ke Guru Piket</small>
+      </div>
+      <div class="card-body p-4">
+        <form id="formGuruKelas">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nama Guru Pengajar</label>
+            <select class="form-select border-success" id="namaPetugas" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Kelas / Jurusan</label>
+            <select class="form-select" id="kelas" onchange="loadSiswa()" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nama Siswa</label>
+            <select class="form-select" id="nama" disabled required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Jenis Izin</label>
+            <select class="form-select" id="jenisIzin" required>
+              <option value="Izin Keluar (Sakit/UKS)">Izin Keluar (Sakit/UKS)</option>
+              <option value="Izin Keluar (Keperluan Lain)">Izin Keluar (Keperluan Lain)</option>
+              <option value="Izin Keluar (Tugas Sekolah)">Izin Keluar (Tugas Sekolah)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Alasan / Keterangan Izin</label>
+            <textarea class="form-control" id="alasan" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Kirim Pengajuan Izin Keluar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+
+    window.onload = function() {
+      fetch(`${WEB_APP_URL}?action=getMasterData`)
+        .then(res => res.json())
+        .then(data => {
+          const gSel = document.getElementById('namaPetugas');
+          gSel.innerHTML = '<option value="" selected disabled>Pilih Nama Guru...</option>';
+          data.guru.forEach(g => { gSel.innerHTML += `<option value="${g}">${g}</option>`; });
+
+          const kSel = document.getElementById('kelas');
+          kSel.innerHTML = '<option value="" selected disabled>Pilih Kelas...</option>';
+          data.kelas.forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
+        });
+    };
+
+    function loadSiswa() {
+      const kelas = document.getElementById('kelas').value;
+      const sSel = document.getElementById('nama');
+      sSel.disabled = true;
+
+      fetch(`${WEB_APP_URL}?action=getSiswaByKelas&kelas=${encodeURIComponent(kelas)}`)
+        .then(res => res.json())
+        .then(list => {
+          sSel.innerHTML = '<option value="" selected disabled>-- Pilih Nama Siswa --</option>';
+          list.forEach(s => { sSel.innerHTML += `<option value="${s}">${s}</option>`; });
+          sSel.disabled = false;
+        });
+    }
+
+    document.getElementById('formGuruKelas').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const payload = {
+        action: "simpanPengajuanGuruKelas",
+        petugas: document.getElementById('namaPetugas').value,
+        kelas: document.getElementById('kelas').value,
+        nama: document.getElementById('nama').value,
+        jenisIzin: document.getElementById('jenisIzin').value,
+        alasan: document.getElementById('alasan').value
+      };
+
+      fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          Swal.fire('Berhasil!', 'Pengajuan terkirim. Kode ID: ' + res.id, 'success');
+          document.getElementById('formGuruKelas').reset();
+        });
+    });
+  </script>
+</body>
+</html>
