@@ -496,8 +496,20 @@
         .then(res => {
           dataSiswa  = res.siswa || [];
           dataGuru   = res.guru || [];
-          dataJadwal = res.jadwal || [];
           dataAdmin  = res.admin || [];
+
+          // Jika dari server belum ada data jadwal, otomatis buatkan daftar Senin - Jumat
+          if (res.jadwal && res.jadwal.length > 0) {
+            dataJadwal = res.jadwal;
+          } else {
+            dataJadwal = [
+              { rowIndex: 2, hari: "Senin",  guruPiket: "", guruKelas: "", security: "" },
+              { rowIndex: 3, hari: "Selasa", guruPiket: "", guruKelas: "", security: "" },
+              { rowIndex: 4, hari: "Rabu",   guruPiket: "", guruKelas: "", security: "" },
+              { rowIndex: 5, hari: "Kamis",  guruPiket: "", guruKelas: "", security: "" },
+              { rowIndex: 6, hari: "Jumat",  guruPiket: "", guruKelas: "", security: "" }
+            ];
+          }
 
           // Isi dropdown filter kelas
           const selKelas = document.getElementById('filterKelasSiswa');
