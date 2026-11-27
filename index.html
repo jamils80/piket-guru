@@ -239,7 +239,19 @@
       return String(str || "").replace(/['’`\s]/g, "").toLowerCase();
     }
 
+    function bersihkanSesiPetugas() {
+      sessionStorage.removeItem("sesiGuruPiket");
+      sessionStorage.removeItem("sesiSecurity");
+    }
+
+    // Pastikan sesi lama selalu dihapus baik saat halaman dimuat maupun dipulihkan dari bfcache (tombol Back)
+    window.addEventListener("pageshow", function() {
+      bersihkanSesiPetugas();
+    });
+
     window.onload = function() {
+      bersihkanSesiPetugas();
+
       const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('badgeTanggalHariIni').innerText = now.toLocaleDateString('id-ID', opsiTanggal);
       document.getElementById('labelHariIni').innerText = namaHariIni;
@@ -314,10 +326,8 @@
 
     async function bukaDialogLoginPetugas(role, targetUrl) {
       const sesiKey = role === "guruPiket" ? "sesiGuruPiket" : "sesiSecurity";
-      if (sessionStorage.getItem(sesiKey)) {
-        window.location.href = targetUrl;
-        return;
-      }
+      // Selalu hapus sesi lama agar setiap klik portal mewajibkan verifikasi user & password ulang
+      bersihkanSesiPetugas();
 
       const judul = role === "guruPiket" ? "🔐 Login Portal Guru Piket" : "🛡️ Login Verifikasi Pos Security";
 
@@ -403,7 +413,7 @@
           icon: 'success',
           title: 'Berhasil Masuk!',
           text: result.value.message,
-          timer: 1200,
+          timer: 1100,
           showConfirmButton: false
         }).then(() => {
           window.location.href = targetUrl;
