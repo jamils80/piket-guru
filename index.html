@@ -3,124 +3,355 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Sistem Piket Guru - SMKN 1 Purwoasri</title>
+  <title>Sistem Piket Guru - SMKN 1 Purwoasri</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-      color: white;
+      background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
       font-family: 'Poppins', sans-serif;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
     }
-    .main-card {
-      background: rgba(255, 255, 255, 0.95);
-      color: #2d3436;
-      border-radius: 25px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-      width: 100%;
-      max-width: 500px;
-      padding: 35px 25px;
-      text-align: center;
+    .hero-header {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(30, 58, 138, 0.25);
     }
-    .logo-img {
-      height: 60px;
+    .logo-beranda {
+      max-height: 80px;
       width: auto;
-      object-fit: contain;
+      margin-bottom: 12px;
     }
-    .btn-portal {
-      border-radius: 15px;
-      padding: 15px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      transition: all 0.3s ease;
+    .menu-card {
+      border: none;
+      border-radius: 18px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      height: 100%;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+    .menu-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+    .icon-box {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 15px;
-      text-decoration: none;
+      font-size: 1.75rem;
+      margin: 0 auto 16px;
     }
-    /* Tombol Guru Piket */
-    .btn-piket { 
-      background: #0d6efd; 
-      color: white; 
-      border: none; 
-    }
-    .btn-piket:hover { 
-      background: #0b5ed7; 
-      color: white; 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(13, 110, 253, 0.3);
-    }
-    
-    /* Tombol Guru Pengajar */
-    .btn-guru { 
-      background: #198754; 
-      color: white; 
-      border: none; 
-    }
-    .btn-guru:hover { 
-      background: #157347; 
-      color: white; 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(25, 135, 84, 0.3);
-    }
-
-    /* Tombol Security */
-    .btn-security { 
-      background: #fd7e14; 
-      color: white; 
-      border: none; 
-    }
-    .btn-security:hover { 
-      background: #e06d10; 
-      color: white; 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(253, 126, 20, 0.3);
+    .jadwal-banner {
+      background: #fff;
+      border-radius: 16px;
+      border-left: 5px solid #2563eb;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     }
   </style>
 </head>
-<body>
+<body class="py-4 px-3">
 
-  <div class="main-card">
-    <div class="d-flex justify-content-center gap-3 mb-3">
-      <img src="https://lh3.googleusercontent.com/d/1MZz8aioQlkFozWDJ1Y7Z1tRj_nZCSWO0" class="logo-img" alt="Logo Pemprov">
-      <img src="https://lh3.googleusercontent.com/d/1gj5Xy_Gk9UHulau-_vf3IZuYlQtQN6Jz" class="logo-img" alt="Logo SMKN">
+  <div class="container" style="max-width: 900px;">
+    
+    <!-- HEADER UTAMA -->
+    <div class="hero-header text-center p-4 p-md-5 mb-4">
+      <div id="logoContainer">
+        <img src="https://lh3.googleusercontent.com/d/1gj5Xy_Gk9UHulau-_vf3IZuYlQtQN6Jz" class="logo-beranda" alt="Logo SMKN 1 Purwoasri">
+      </div>
+      <h3 class="fw-bold mb-1 text-uppercase">SISTEM INFORMASI PIKET GURU</h3>
+      <p class="mb-2 opacity-75">SMK Negeri 1 Purwoasri</p>
+      <span class="badge bg-light text-primary fw-semibold px-3 py-2 rounded-pill" id="badgeTanggalHariIni">
+        Memuat tanggal...
+      </span>
     </div>
 
-    <h4 class="fw-bold mb-1 text-primary">PORTAL JURNAL PIKET</h4>
-    <p class="text-muted small mb-4">SMK Negeri 1 Purwoasri Kediri</p>
-
-    <div class="d-grid gap-2">
-      <!-- Opsi 1: Menuju Formulir Jurnal Piket Guru (piket.html) -->
-      <a href="piket.html" class="btn btn-portal btn-piket">
-        <i class="fa-solid fa-clipboard-user fs-4"></i>
-        <span>Portal Guru Piket</span>
-      </a>
-
-      <!-- Opsi 2: Menuju Form Pengajuan Guru Pengajar (guru.html) -->
-      <a href="guru.html" class="btn btn-portal btn-guru">
-        <i class="fa-solid fa-chalkboard-user fs-4"></i>
-        <span>Pengajuan Guru Kelas</span>
-      </a>
-
-      <!-- Opsi 3: Menuju Form Verifikasi Security Gerbang (security.html) -->
-      <a href="security.html" class="btn btn-portal btn-security">
-        <i class="fa-solid fa-shield-halved fs-4"></i>
-        <span>Verifikasi Pos Security</span>
-      </a>
+    <!-- INFO PETUGAS PIKET HARI INI -->
+    <div class="jadwal-banner p-3 p-md-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold text-primary mb-0">
+          <i class="fa-solid fa-calendar-check me-2"></i> Petugas Piket Bertugas Hari <span id="labelHariIni">Ini</span>
+        </h6>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Jadwal Aktif</span>
+      </div>
+      <div class="row g-3 mt-1 small">
+        <div class="col-md-7">
+          <div class="p-2 bg-light rounded-3 border">
+            <span class="text-muted d-block">👨‍🏫 Guru Piket:</span>
+            <strong id="infoGuruPiketHariIni" class="text-dark">Memuat jadwal...</strong>
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="p-2 bg-light rounded-3 border">
+            <span class="text-muted d-block">🛡️ Petugas Security:</span>
+            <strong id="infoSecurityHariIni" class="text-dark">Memuat jadwal...</strong>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="mt-4 pt-2 border-top text-muted small">
-      &copy; 2026 | SMKN 1 Purwoasri
+    <!-- KARTU MENU PORTAL -->
+    <div class="row g-4">
+      
+      <!-- 1. PORTAL GURU PIKET (DENGAN LOGIN PASSWORD + CEK JADWAL) -->
+      <div class="col-md-6">
+        <div class="card menu-card p-4 text-center" onclick="bukaDialogLoginPetugas('guruPiket', 'piket.html')">
+          <div class="icon-box bg-primary-subtle text-primary">
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Portal Guru Piket</h5>
+          <p class="text-muted small mb-3">
+            Pencatatan izin keluar/masuk siswa, persetujuan pengajuan guru kelas, dan cetak jurnal piket harian.
+          </p>
+          <div class="mt-auto">
+            <span class="btn btn-primary w-100 fw-bold rounded-3">
+              <i class="fa-solid fa-lock me-2"></i> Masuk Portal Guru Piket
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. VERIFIKASI POS SECURITY (DENGAN LOGIN PASSWORD + CEK JADWAL) -->
+      <div class="col-md-6">
+        <div class="card menu-card p-4 text-center" onclick="bukaDialogLoginPetugas('security', 'security.html')">
+          <div class="icon-box bg-info-subtle text-info">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Verifikasi Pos Security</h5>
+          <p class="text-muted small mb-3">
+            Input siswa terlambat masuk gerbang dan verifikasi penyelesaian surat izin keluar/masuk siswa.
+          </p>
+          <div class="mt-auto">
+            <span class="btn btn-info text-white w-100 fw-bold rounded-3">
+              <i class="fa-solid fa-lock me-2"></i> Masuk Pos Security
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. FORM PENGAJUAN GURU KELAS (TANPA BATASAN JADWAL PIKET) -->
+      <div class="col-md-6">
+        <a href="guru.html" class="text-decoration-none">
+          <div class="card menu-card p-4 text-center">
+            <div class="icon-box bg-success-subtle text-success">
+              <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Pengajuan Guru Kelas</h5>
+            <p class="text-muted small mb-3">
+              Pengajuan izin keluar siswa saat jam pelajaran berlangsung oleh guru pengajar di kelas.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-success w-100 fw-bold rounded-3">
+                <i class="fa-solid fa-paper-plane me-2"></i> Buka Form Pengajuan
+              </span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- 4. PANEL ADMIN PIKET -->
+      <div class="col-md-6">
+        <a href="admin.html" class="text-decoration-none">
+          <div class="card menu-card p-4 text-center">
+            <div class="icon-box bg-dark-subtle text-dark">
+              <i class="fa-solid fa-users-gear"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Panel Admin Piket</h5>
+            <p class="text-muted small mb-3">
+              Manajemen database siswa, data guru, password petugas, jadwal piket mingguan, dan akun admin.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-dark w-100 fw-bold rounded-3">
+                <i class="fa-solid fa-gear me-2"></i> Kelola Data & Jadwal
+              </span>
+            </div>
+          </div>
+        </a>
+      </div>
+
     </div>
+
+    <footer class="text-center text-muted small mt-5">
+      &copy; 2026 SMK Negeri 1 Purwoasri &bull; Sistem Piket Guru Smeksapur
+    </footer>
   </div>
 
+  <script>
+    const RAW_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+    const WEB_APP_URL = RAW_WEB_APP_URL.replace(/\/u\/\d+\//, '/');
+
+    const hariArr = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const now = new Date();
+    const namaHariIni = hariArr[now.getDay()];
+
+    let jadwalHariIniCache = null;
+
+    function normalisasiHari(str) {
+      return String(str || "").replace(/['’`\s]/g, "").toLowerCase();
+    }
+
+    window.onload = function() {
+      // Tampilkan tanggal Indonesia saat ini
+      const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('badgeTanggalHariIni').innerText = now.toLocaleDateString('id-ID', opsiTanggal);
+      document.getElementById('labelHariIni').innerText = namaHariIni;
+
+      // Sinkronisasi Logo dari Server
+      fetch(`${WEB_APP_URL}?action=getAppAssets`)
+        .then(res => res.json())
+        .then(assets => {
+          if (assets && assets.logoBeranda) {
+            document.getElementById('logoContainer').innerHTML = `<img src="${assets.logoBeranda}" class="logo-beranda" alt="Logo SMKN 1 Purwoasri">`;
+          }
+        }).catch(() => {});
+
+      // Muat Jadwal Piket Hari Ini
+      muatJadwalHariIni();
+    };
+
+    async function muatJadwalHariIni() {
+      try {
+        let list = await fetch(`${WEB_APP_URL}?action=getJadwalPiket&_t=${Date.now()}`).then(r => r.json());
+        if (!Array.isArray(list)) {
+          const adminData = await fetch(`${WEB_APP_URL}?action=getAdminPiketData&_t=${Date.now()}`).then(r => r.json());
+          list = adminData.jadwal || [];
+        }
+
+        jadwalHariIniCache = list.find(j => normalisasiHari(j.hari) === normalisasiHari(namaHariIni)) || null;
+
+        if (jadwalHariIniCache) {
+          document.getElementById('infoGuruPiketHariIni').innerText = jadwalHariIniCache.guruPiket || "Belum ditentukan";
+          document.getElementById('infoSecurityHariIni').innerText = jadwalHariIniCache.security || "Belum ditentukan";
+        } else {
+          document.getElementById('infoGuruPiketHariIni').innerText = "Tidak ada jadwal piket hari ini";
+          document.getElementById('infoSecurityHariIni').innerText = "Tidak ada jadwal security hari ini";
+        }
+      } catch (e) {
+        document.getElementById('infoGuruPiketHariIni').innerText = "Gagal memuat jadwal";
+        document.getElementById('infoSecurityHariIni').innerText = "Gagal memuat jadwal";
+      }
+    }
+
+    async function bukaDialogLoginPetugas(role, targetUrl) {
+      // Jika sesi sudah aktif di tab ini, langsung arahkan ke halaman tujuan
+      const sesiKey = role === "guruPiket" ? "sesiGuruPiket" : "sesiSecurity";
+      if (sessionStorage.getItem(sesiKey)) {
+        window.location.href = targetUrl;
+        return;
+      }
+
+      const judul = role === "guruPiket" ? "🔐 Login Portal Guru Piket" : "🛡️ Login Verifikasi Pos Security";
+
+      Swal.fire({
+        title: 'Menyiapkan Daftar Petugas...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      let daftarOpsi = [];
+      try {
+        if (!jadwalHariIniCache) {
+          await muatJadwalHariIni();
+        }
+
+        if (jadwalHariIniCache) {
+          const rawStr = role === "guruPiket" ? jadwalHariIniCache.guruPiket : jadwalHariIniCache.security;
+          daftarOpsi = String(rawStr || "").split(/[,\/;\n]/).map(s => s.trim()).filter(Boolean);
+        }
+
+        // Cadangan: jika jadwal hari ini kosong (misal Sabtu/Minggu atau belum diatur), tampilkan daftar master guru
+        if (daftarOpsi.length === 0) {
+          const master = await fetch(`${WEB_APP_URL}?action=getMasterData`).then(r => r.json());
+          daftarOpsi = master.guru || [];
+        }
+      } catch (e) {
+        Swal.fire('Koneksi Gagal', 'Tidak dapat mengambil data jadwal dari server.', 'error');
+        return;
+      }
+
+      const optionsHtml = daftarOpsi.map(nama => `<option value="${nama}">${nama}</option>`).join('');
+
+      const { value: formValues } = await Swal.fire({
+        title: judul,
+        html: `
+          <div class="text-start">
+            <div class="alert alert-primary py-2 small mb-3">
+              📅 Jadwal Piket Aktif: <b>Hari ${namaHariIni}</b><br>
+              <span class="text-muted">Password default awal: <b>123456</b> (dapat diubah setelah masuk)</span>
+            </div>
+            <label class="form-label fw-bold small">Nama Petugas (${role === "guruPiket" ? "Guru Piket" : "Security"})</label>
+            <select id="swalNamaPetugas" class="form-select mb-3">
+              <option value="">-- Pilih Nama Anda --</option>
+              ${optionsHtml}
+            </select>
+            <label class="form-label fw-bold small">Password Petugas</label>
+            <input type="password" id="swalPassPetugas" class="form-control" placeholder="Masukkan password...">
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Verifikasi & Masuk',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: role === "guruPiket" ? '#1e3a8a' : '#0dcaf0',
+        preConfirm: () => {
+          const nama = document.getElementById('swalNamaPetugas').value;
+          const password = document.getElementById('swalPassPetugas').value;
+          if (!nama || !password) {
+            Swal.showValidationMessage('Nama petugas dan password wajib diisi!');
+            return false;
+          }
+          return { nama, password };
+        }
+      });
+
+      if (!formValues) return;
+
+      Swal.fire({
+        title: 'Memverifikasi Jadwal & Password...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "loginPetugasPiket",
+          role: role,
+          nama: formValues.nama,
+          password: formValues.password
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          sessionStorage.setItem(sesiKey, JSON.stringify(res.petugas));
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil Masuk!',
+            text: res.message,
+            timer: 1200,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.href = targetUrl;
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Akses Ditolak',
+            text: res.message,
+            confirmButtonColor: '#1e3a8a'
+          });
+        }
+      })
+      .catch(() => {
+        Swal.fire('Kesalahan Jaringan', 'Gagal terhubung ke server Apps Script.', 'error');
+      });
+    }
+  </script>
 </body>
 </html>
