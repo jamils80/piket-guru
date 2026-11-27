@@ -88,10 +88,19 @@
         <h5 class="fw-semibold" id="subJudulUtama">TAHUN PELAJARAN</h5>
       </div>
       <div class="card-body p-4">
-        <!-- INFO JADWAL PIKET HARI INI -->
-        <div id="boxInfoJadwalHariIni" class="alert alert-primary small d-none mb-3">
-          <strong>📅 Jadwal Guru Piket Hari <span id="teksHariIni"></span>:</strong><br>
-          <span id="teksGuruPiketJadwal" class="fw-semibold"></span>
+        <!-- BAR STATUS GURU PIKET AKTIF, UBAH PASSWORD & LOGOUT -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center bg-light border rounded-3 p-2 mb-3 gap-2">
+          <div class="small">
+            👤 Guru Piket: <strong id="labelPetugasAktif" class="text-primary">-</strong>
+          </div>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-warning fw-bold" onclick="dialogUbahPasswordPetugas()">
+              🔑 Ubah Password
+            </button>
+            <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="logoutPetugas()">
+              🚪 Logout
+            </button>
+          </div>
         </div>
 
         <div id="alertSuccess" class="alert alert-success d-none" role="alert">
@@ -102,9 +111,7 @@
         <form id="piketForm">
           <div class="mb-3">
             <label class="form-label fw-semibold">Nama Guru Piket</label>
-            <select class="form-select" id="guruPiket" required>
-              <option value="" selected disabled>Memuat data guru...</option>
-            </select>
+            <select class="form-select bg-light fw-semibold" id="guruPiket" required></select>
           </div>
 
           <div class="mb-3">
@@ -226,14 +233,34 @@
   
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+    const SESI_KEY = "sesiGuruPiket";
 
     let modalGuruObj = null;
     let lastDataIzinSimpan = null;
-    let appAssets = {};
-    let jadwalHariIni = null;
-    const namaHariIni = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][new Date().getDay()];
+    let petugasAktif = null;
+    let daftarSemuaGuru = [];
 
     window.onload = function() {
+      // Wajib punya sesi login dari index.html; jika belum, kembalikan ke index.html
+      const saved = sessionStorage.getItem(SESI_KEY);
+      if (!saved) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Akses Terbatas',
+          text: 'Silakan login terlebih dahulu melalui Portal Guru Piket di halaman utama.',
+          confirmButtonText: 'Ke Halaman Login',
+          allowOutsideClick: false
+        }).then(() => {
+          window.location.href = "index.html";
+        });
+        return;
+      }
+
+      petugasAktif = JSON.parse(saved);
+      document.getElementById('labelPetugasAktif').innerText = petugasAktif.nama;
+      const gSel = document.getElementById('guruPiket');
+      gSel.innerHTML = `<option value="${petugasAktif.nama}" selected>${petugasAktif.nama}</option>`;
+
       modalGuruObj = new bootstrap.Modal(document.getElementById('modalInputGuru'));
       document.getElementById('tglCetak').valueAsDate = new Date();
 
@@ -247,23 +274,8 @@
       fetch(`${WEB_APP_URL}?action=getAppAssets`)
         .then(res => res.json())
         .then(assets => {
-          appAssets = assets;
-          if (assets.logoBeranda) {
+          if (assets && assets.logoBeranda) {
             document.getElementById('logoContainer').innerHTML = `<img src="${assets.logoBeranda}" class="logo-beranda" alt="Logo">`;
-          }
-        }).catch(() => {});
-
-      // Fetch Jadwal Piket Hari Ini
-      fetch(`${WEB_APP_URL}?action=getJadwalPiket&_t=${new Date().getTime()}`)
-        .then(res => res.json())
-        .then(list => {
-          if (Array.isArray(list)) {
-            jadwalHariIni = list.find(j => (j.hari || '').trim().toLowerCase() === namaHariIni.toLowerCase()) || null;
-            if (jadwalHariIni && jadwalHariIni.guruPiket) {
-              document.getElementById('teksHariIni').innerText = namaHariIni;
-              document.getElementById('teksGuruPiketJadwal').innerText = jadwalHariIni.guruPiket;
-              document.getElementById('boxInfoJadwalHariIni').classList.remove('d-none');
-            }
           }
         }).catch(() => {});
 
@@ -271,37 +283,87 @@
       fetch(`${WEB_APP_URL}?action=getMasterData`)
         .then(res => res.json())
         .then(data => {
-          const gSel = document.getElementById('guruPiket');
-          gSel.innerHTML = '<option value="" selected disabled>-- Pilih Guru Piket --</option>';
-          data.guru.forEach(g => { gSel.innerHTML += `<option value="${g}">${g}</option>`; });
-
+          daftarSemuaGuru = data.guru || [];
           const kSel = document.getElementById('kelas');
           kSel.innerHTML = '<option value="" selected disabled>-- Pilih Kelas --</option>';
-          data.kelas.forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
+          (data.kelas || []).forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
         });
 
       loadAntrean();
     };
 
-    // Validasi Kesesuaian Guru Piket dengan Jadwal Hari Ini
-    function validasiGuruPiket(namaDipilih) {
-      if (!jadwalHariIni || !jadwalHariIni.guruPiket || jadwalHariIni.guruPiket.trim() === "") {
-        return true; // Jika jadwal hari ini belum diatur di admin, izinkan lanjut
-      }
-      const daftarSah = jadwalHariIni.guruPiket.toLowerCase();
-      const inputNama = (namaDipilih || "").trim().toLowerCase();
+    function logoutPetugas() {
+      Swal.fire({
+        title: 'Logout dari Portal Guru Piket?',
+        text: 'Anda harus memasukkan kembali user dan password piket untuk masuk lagi.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Logout',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          sessionStorage.removeItem(SESI_KEY);
+          window.location.href = "index.html";
+        }
+      });
+    }
 
-      if (inputNama === "" || !daftarSah.includes(inputNama)) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Nama Guru Piket Tidak Sesuai!',
-          html: `Nama guru piket yang Anda pilih <b>tidak sesuai dengan jadwal piket hari ${namaHariIni}</b>.<br><br>Silakan gunakan nama guru piket yang sesuai dengan jadwal piket:<br><span class="badge bg-primary text-wrap mt-2 p-2" style="font-size:0.9rem;">${jadwalHariIni.guruPiket}</span>`,
-          confirmButtonText: 'Mengerti, Saya Ganti',
-          confirmButtonColor: '#0d6efd'
-        });
-        return false;
-      }
-      return true;
+    async function dialogUbahPasswordPetugas() {
+      if (!petugasAktif) return;
+      const { value: formPass } = await Swal.fire({
+        title: '🔑 Ubah Password Guru Piket',
+        html: `
+          <div class="text-start">
+            <div class="mb-2 small">Akun: <b>${petugasAktif.nama}</b></div>
+            <label class="form-label small fw-bold">Password Lama</label>
+            <input type="password" id="passLamaInput" class="form-control mb-3" placeholder="Password lama (default: 123456)">
+            <label class="form-label small fw-bold">Password Baru</label>
+            <input type="password" id="passBaruInput" class="form-control mb-3" placeholder="Minimal 4 karakter">
+            <label class="form-label small fw-bold">Konfirmasi Password Baru</label>
+            <input type="password" id="passKonfirmInput" class="form-control" placeholder="Ulangi password baru">
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan Password Baru',
+        cancelButtonText: 'Batal',
+        preConfirm: () => {
+          const lama = document.getElementById('passLamaInput').value;
+          const baru = document.getElementById('passBaruInput').value;
+          const konf = document.getElementById('passKonfirmInput').value;
+          if (!lama || !baru || !konf) {
+            Swal.showValidationMessage('Semua kolom password wajib diisi!');
+            return false;
+          }
+          if (baru !== konf) {
+            Swal.showValidationMessage('Konfirmasi password baru tidak cocok!');
+            return false;
+          }
+          return { lama, baru };
+        }
+      });
+
+      if (!formPass) return;
+
+      Swal.fire({ title: 'Menyimpan Password...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "ubahPasswordPetugas",
+          nama: petugasAktif.nama,
+          passwordLama: formPass.lama,
+          passwordBaru: formPass.baru
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          Swal.fire('Berhasil!', res.message, 'success');
+        } else {
+          Swal.fire('Gagal', res.message, 'error');
+        }
+      });
     }
 
     function loadSiswa() {
@@ -320,17 +382,12 @@
 
     document.getElementById('piketForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const guruDipilih = document.getElementById('guruPiket').value;
-
-      // Cek kesesuaian jadwal guru piket sebelum mengirim
-      if (!validasiGuruPiket(guruDipilih)) return;
-
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
 
       const payload = {
         action: "simpanPerizinan",
-        guruPiket: guruDipilih,
+        guruPiket: petugasAktif.nama,
         kelas: document.getElementById('kelas').value,
         nama: document.getElementById('nama').value,
         jenisIzin: document.getElementById('jenisIzin').value,
@@ -350,12 +407,15 @@
           lastDataIzinSimpan = { ...payload, id: res.id, timestamp: new Date().toLocaleString('id-ID'), status: 'Disetujui' };
           cetakNota(lastDataIzinSimpan);
           document.getElementById('piketForm').reset();
+          document.getElementById('guruPiket').innerHTML = `<option value="${petugasAktif.nama}" selected>${petugasAktif.nama}</option>`;
         })
         .catch(() => { btn.disabled = false; });
     });
 
     function bukaModalIzinGuru() {
-      document.getElementById('guruIzinNama').innerHTML = document.getElementById('guruPiket').innerHTML;
+      const selGuru = document.getElementById('guruIzinNama');
+      selGuru.innerHTML = '<option value="" selected disabled>-- Pilih Nama Guru --</option>' +
+        daftarSemuaGuru.map(g => `<option value="${g}">${g}</option>`).join('');
       modalGuruObj.show();
     }
 
@@ -400,18 +460,9 @@
     }
 
     function setujuiIzin(idIzin) {
-      const guruPiket = document.getElementById('guruPiket').value;
-      if (!guruPiket) {
-        Swal.fire('Perhatian', 'Pilih Nama Guru Piket di form atas terlebih dahulu!', 'warning');
-        return;
-      }
-
-      // Cek kesesuaian jadwal guru piket sebelum menyetujui
-      if (!validasiGuruPiket(guruPiket)) return;
-
       fetch(WEB_APP_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: "setujuiIzinPiket", idIzin: idIzin, namaGuruPiket: guruPiket })
+        body: JSON.stringify({ action: "setujuiIzinPiket", idIzin: idIzin, namaGuruPiket: petugasAktif.nama })
       })
       .then(res => res.json())
       .then(res => {
@@ -419,7 +470,7 @@
           Swal.fire('Peringatan Jadwal', res.message, 'warning');
           return;
         }
-        Swal.fire('Disetujui!', 'Izin siswa telah disetujui oleh ' + guruPiket, 'success');
+        Swal.fire('Disetujui!', 'Izin siswa disetujui oleh ' + petugasAktif.nama, 'success');
         loadAntrean();
       });
     }
