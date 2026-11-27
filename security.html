@@ -47,7 +47,6 @@
       overflow: hidden;
       background: linear-gradient(135deg, #0d6efd, #003566) !important;
     }
-    /* Efek garis cahaya pemindai (Radar Sweep) pada header Security */
     .card-header.bg-primary::after {
       content: "";
       position: absolute;
@@ -76,7 +75,7 @@
     }
   </style>
 </head>
-<body class="p-3" style="background:#f0f2f5;">
+<body class="p-3">
   <div class="container" style="max-width: 600px;">
     <!-- FORM PENGAJUAN IZIN MASUK BY SECURITY -->
     <div class="card shadow mb-4 border-0" style="border-radius: 16px;">
@@ -87,16 +86,25 @@
         <h5 class="mb-0 fw-bold text-uppercase">🛡️ Form Pengajuan Izin Masuk (Security)</h5>
       </div>
       <div class="card-body p-4">
-        <!-- INFO JADWAL SECURITY HARI INI -->
-        <div id="boxInfoSecurityHariIni" class="alert alert-primary small d-none mb-3">
-          <strong>🛡️ Jadwal Security Hari <span id="teksHariSecurity"></span>:</strong><br>
-          <span id="teksSecurityJadwal" class="fw-semibold"></span>
+        <!-- BAR STATUS SECURITY AKTIF, UBAH PASSWORD & LOGOUT -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center bg-light border rounded-3 p-2 mb-3 gap-2">
+          <div class="small">
+            🛡️ Security: <strong id="labelPetugasAktif" class="text-primary">-</strong>
+          </div>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-warning fw-bold" onclick="dialogUbahPasswordPetugas()">
+              🔑 Ubah Password
+            </button>
+            <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="logoutPetugas()">
+              🚪 Logout
+            </button>
+          </div>
         </div>
 
         <form id="formSecurity">
           <div class="mb-3">
             <label class="form-label fw-bold">Nama Security / Petugas</label>
-            <select class="form-select border-primary" id="namaPetugas" required></select>
+            <select class="form-select border-primary bg-light fw-semibold" id="namaPetugas" required></select>
           </div>
           <div class="mb-3">
             <label class="form-label fw-bold">Kelas / Jurusan</label>
@@ -149,17 +157,32 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+    const SESI_KEY = "sesiSecurity";
 
-    let jadwalHariIni = null;
-    let jadwalSudahDimuat = false;
-    const namaHariIni = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][new Date().getDay()];
-
-    function normalisasiHari(str) {
-      return String(str || "").replace(/['’`\s]/g, "").toLowerCase();
-    }
+    let petugasAktif = null;
 
     window.onload = function() {
-      // 1. Sinkronisasi Logo dari Server
+      // Wajib punya sesi login dari index.html; jika belum, kembalikan ke index.html
+      const saved = sessionStorage.getItem(SESI_KEY);
+      if (!saved) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Akses Terbatas',
+          text: 'Silakan login terlebih dahulu melalui Verifikasi Pos Security di halaman utama.',
+          confirmButtonText: 'Ke Halaman Login',
+          allowOutsideClick: false
+        }).then(() => {
+          window.location.href = "index.html";
+        });
+        return;
+      }
+
+      petugasAktif = JSON.parse(saved);
+      document.getElementById('labelPetugasAktif').innerText = petugasAktif.nama;
+      const gSel = document.getElementById('namaPetugas');
+      gSel.innerHTML = `<option value="${petugasAktif.nama}" selected>${petugasAktif.nama}</option>`;
+
+      // Sinkronisasi Logo dari Server
       fetch(`${WEB_APP_URL}?action=getAppAssets`)
         .then(res => res.json())
         .then(assets => {
@@ -168,84 +191,90 @@
           }
         }).catch(() => {});
 
-      // 2. Ambil Jadwal Piket (Utama: getJadwalPiket, Cadangan: getAdminPiketData)
-      const fetchJadwal = fetch(`${WEB_APP_URL}?action=getJadwalPiket&_t=${new Date().getTime()}`)
+      // Muat Master Kelas
+      fetch(`${WEB_APP_URL}?action=getMasterData`)
         .then(r => r.json())
-        .then(res => {
-          if (Array.isArray(res)) return res;
-          return fetch(`${WEB_APP_URL}?action=getAdminPiketData&_t=${new Date().getTime()}`)
-            .then(r2 => r2.json())
-            .then(res2 => res2.jadwal || []);
-        })
-        .catch(() => []);
-
-      // 3. Muat Jadwal & Master Data
-      Promise.all([
-        fetchJadwal,
-        fetch(`${WEB_APP_URL}?action=getMasterData`).then(r => r.json())
-      ]).then(([listJadwal, data]) => {
-        jadwalSudahDimuat = true;
-        const gSel = document.getElementById('namaPetugas');
-        gSel.innerHTML = '<option value="" selected disabled>Pilih Nama Security...</option>';
-
-        if (Array.isArray(listJadwal)) {
-          jadwalHariIni = listJadwal.find(j => normalisasiHari(j.hari) === normalisasiHari(namaHariIni)) || null;
-          if (jadwalHariIni && jadwalHariIni.security && jadwalHariIni.security.trim() !== "") {
-            document.getElementById('teksHariSecurity').innerText = namaHariIni;
-            document.getElementById('teksSecurityJadwal').innerText = jadwalHariIni.security;
-            document.getElementById('boxInfoSecurityHariIni').classList.remove('d-none');
-
-            const daftarSec = jadwalHariIni.security.split(/[,\/;\n]/).map(s => s.trim()).filter(Boolean);
-            daftarSec.forEach(secName => {
-              gSel.innerHTML += `<option value="${secName}">🛡️ ${secName} (Jadwal Hari Ini)</option>`;
-            });
-          }
-        }
-
-        // Tetap tampilkan daftar petugas lain sebagai opsi pembanding
-        (data.guru || []).forEach(g => {
-          gSel.innerHTML += `<option value="${g}">${g}</option>`;
+        .then(data => {
+          const kSel = document.getElementById('kelas');
+          kSel.innerHTML = '<option value="" selected disabled>Pilih Kelas...</option>';
+          (data.kelas || []).forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
         });
-
-        const kSel = document.getElementById('kelas');
-        kSel.innerHTML = '<option value="" selected disabled>Pilih Kelas...</option>';
-        (data.kelas || []).forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
-      }).catch(() => {
-        jadwalSudahDimuat = true;
-        Swal.fire('Error', 'Gagal memuat data master & jadwal dari server.', 'error');
-      });
 
       loadRiwayat();
     };
 
-    // Validasi Tegas Kesesuaian Nama Security dengan Jadwal Hari Ini
-    function validasiSecurity(namaDipilih) {
-      if (!jadwalSudahDimuat) {
-        Swal.fire('Tunggu Sebentar', 'Sedang memuat jadwal piket hari ini, silakan coba beberapa detik lagi.', 'info');
-        return false;
-      }
-
-      if (jadwalHariIni && jadwalHariIni.security && jadwalHariIni.security.trim() !== "") {
-        const daftarSecSah = jadwalHariIni.security
-          .split(/[,\/;\n]/)
-          .map(s => s.trim().toLowerCase())
-          .filter(Boolean);
-
-        const inputNama = String(namaDipilih || "").trim().toLowerCase();
-        const cocok = daftarSecSah.some(sec => sec === inputNama);
-
-        if (!cocok) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Nama Security Tidak Sesuai!',
-            html: `Nama security yang Anda pilih <b>tidak sesuai dengan jadwal piket hari ${namaHariIni}</b>.<br><br>Silakan gunakan nama security yang sesuai dengan jadwal piket:<br><span class="badge bg-primary text-wrap mt-2 p-2" style="font-size:0.9rem;">${jadwalHariIni.security}</span>`,
-            confirmButtonText: 'Mengerti, Saya Ganti',
-            confirmButtonColor: '#0d6efd'
-          });
-          return false;
+    function logoutPetugas() {
+      Swal.fire({
+        title: 'Logout dari Pos Security?',
+        text: 'Anda harus memasukkan kembali user dan password security untuk masuk lagi.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Logout',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          sessionStorage.removeItem(SESI_KEY);
+          window.location.href = "index.html";
         }
-      }
-      return true;
+      });
+    }
+
+    async function dialogUbahPasswordPetugas() {
+      if (!petugasAktif) return;
+      const { value: formPass } = await Swal.fire({
+        title: '🔑 Ubah Password Security',
+        html: `
+          <div class="text-start">
+            <div class="mb-2 small">Akun: <b>${petugasAktif.nama}</b></div>
+            <label class="form-label small fw-bold">Password Lama</label>
+            <input type="password" id="passLamaInput" class="form-control mb-3" placeholder="Password lama (default: 123456)">
+            <label class="form-label small fw-bold">Password Baru</label>
+            <input type="password" id="passBaruInput" class="form-control mb-3" placeholder="Minimal 4 karakter">
+            <label class="form-label small fw-bold">Konfirmasi Password Baru</label>
+            <input type="password" id="passKonfirmInput" class="form-control" placeholder="Ulangi password baru">
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan Password Baru',
+        cancelButtonText: 'Batal',
+        preConfirm: () => {
+          const lama = document.getElementById('passLamaInput').value;
+          const baru = document.getElementById('passBaruInput').value;
+          const konf = document.getElementById('passKonfirmInput').value;
+          if (!lama || !baru || !konf) {
+            Swal.showValidationMessage('Semua kolom password wajib diisi!');
+            return false;
+          }
+          if (baru !== konf) {
+            Swal.showValidationMessage('Konfirmasi password baru tidak cocok!');
+            return false;
+          }
+          return { lama, baru };
+        }
+      });
+
+      if (!formPass) return;
+
+      Swal.fire({ title: 'Menyimpan Password...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "ubahPasswordPetugas",
+          nama: petugasAktif.nama,
+          passwordLama: formPass.lama,
+          passwordBaru: formPass.baru
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          Swal.fire('Berhasil!', res.message, 'success');
+        } else {
+          Swal.fire('Gagal', res.message, 'error');
+        }
+      });
     }
 
     function loadSiswa() {
@@ -264,18 +293,13 @@
 
     document.getElementById('formSecurity').addEventListener('submit', function(e) {
       e.preventDefault();
-      const namaSecurity = document.getElementById('namaPetugas').value;
-
-      // Blokir jika nama security tidak sesuai jadwal piket hari ini
-      if (!validasiSecurity(namaSecurity)) return;
-
       const btn = document.getElementById('btnSubmitSecurity');
       btn.disabled = true;
       btn.innerText = "Mengirim...";
 
       const payload = {
         action: "simpanPengajuanGuruKelas",
-        petugas: namaSecurity,
+        petugas: petugasAktif.nama,
         kelas: document.getElementById('kelas').value,
         nama: document.getElementById('nama').value,
         jenisIzin: document.getElementById('jenisIzin').value,
@@ -294,6 +318,7 @@
           }
           Swal.fire('Berhasil!', 'Pengajuan izin masuk dikirim. Kode ID: ' + res.id, 'success');
           document.getElementById('formSecurity').reset();
+          document.getElementById('namaPetugas').innerHTML = `<option value="${petugasAktif.nama}" selected>${petugasAktif.nama}</option>`;
           document.getElementById('nama').disabled = true;
           loadRiwayat();
         })
@@ -314,7 +339,6 @@
             return;
           }
 
-          // Filter yang belum selesai
           list = list.filter(item => (item.status || '').toLowerCase().indexOf('selesai') === -1);
 
           let html = '';
@@ -337,15 +361,6 @@
     }
 
     function markSelesai(idIzin) {
-      const namaSecurity = document.getElementById('namaPetugas').value;
-      if (!namaSecurity) {
-        Swal.fire('Perhatian', 'Pilih Nama Security di form atas terlebih dahulu!', 'warning');
-        return;
-      }
-
-      // Blokir jika nama security tidak sesuai jadwal piket hari ini
-      if (!validasiSecurity(namaSecurity)) return;
-
       Swal.fire({
         title: 'Memverifikasi...',
         allowOutsideClick: false,
@@ -354,7 +369,7 @@
 
       fetch(WEB_APP_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: "konfirmasiSelesaiIzin", idIzin: idIzin, namaPetugas: namaSecurity })
+        body: JSON.stringify({ action: "konfirmasiSelesaiIzin", idIzin: idIzin, namaPetugas: petugasAktif.nama })
       })
       .then(res => res.json())
       .then(res => {
