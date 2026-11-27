@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin Piket Guru - SMKN 1 Purwoasri</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body { background-color: #f0f4f8; font-family: 'Poppins', sans-serif; min-height: 100vh; }
+    .login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 20px; }
+    .login-card { background: #fff; border-radius: 20px; padding: 35px; width: 100%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); }
+    .navbar-custom { background: linear-gradient(90deg, #1e3a8a, #2563eb); }
+    .card-dashboard { border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .nav-pills .nav-link { font-weight: 600; border-radius: 12px; padding: 10px 20px; color: #1e3a8a; }
+    .nav-pills .nav-link.active { background-color: #1e3a8a; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- HALAMAN LOGIN ADMIN PIKET -->
+  <div id="loginSection" class="login-wrapper">
+    <div class="login-card text-center">
+      <div class="d-flex justify-content-center gap-3 mb-3">
+        <img src="https://lh3.googleusercontent.com/d/1MZz8aioQlkFozWDJ1Y7Z1tRj_nZCSWO0" height="50" alt="Logo Jatim">
+        <img src="https://lh3.googleusercontent.com/d/1gj5Xy_Gk9UHulau-_vf3IZuYlQtQN6Jz" height="50" alt="Logo SMKN">
+      </div>
+      <h4 class="fw-bold text-primary mb-1">ADMIN PIKET GURU</h4>
+      <p class="text-muted small mb-4">SMK Negeri 1 Purwoasri</p>
+
+      <div id="loginAlert" class="alert alert-danger d-none small py-2"></div>
+
+      <form id="formLogin">
+        <div class="mb-3 text-start">
+          <label class="form-label small fw-bold">Username</label>
+          <input type="text" id="loginUser" class="form-control" placeholder="Masukkan username" required>
+        </div>
+        <div class="mb-4 text-start">
+          <label class="form-label small fw-bold">Password</label>
+          <input type="password" id="loginPass" class="form-control" placeholder="Masukkan password" required>
+        </div>
+        <button type="submit" id="btnLogin" class="btn btn-primary w-100 fw-bold py-2 rounded-3">
+          <i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN
+        </button>
+      </form>
+      <div class="mt-3">
+        <a href="index.html" class="text-decoration-none small text-secondary"><i class="fa-solid fa-arrow-left me-1"></i> Kembali ke Beranda Piket</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HALAMAN DASHBOARD ADMIN -->
+  <div id="dashboardSection" class="d-none">
+    <nav class="navbar navbar-dark navbar-custom shadow-sm mb-4">
+      <div class="container">
+        <span class="navbar-brand fw-bold"><i class="fa-solid fa-clipboard-user me-2"></i> Admin Piket Guru Smeksapur</span>
+        <div class="d-flex align-items-center gap-3 text-white">
+          <span class="small d-none d-md-inline" id="infoAdminLogin">Halo, Admin</span>
+          <a href="index.html" class="btn btn-sm btn-outline-light">Beranda Piket</a>
+          <button class="btn btn-sm btn-danger fw-bold" onclick="logoutAdmin()"><i class="fa-solid fa-power-off"></i> Keluar</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container pb-5">
+      <!-- NAVIGASI TAB -->
+      <ul class="nav nav-pills mb-4 bg-white p-2 rounded-4 shadow-sm d-inline-flex flex-wrap gap-1" role="tablist">
+        <li class="nav-item">
+          <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabSiswa" type="button">
+            <i class="fa-solid fa-user-graduate me-2"></i> Data Siswa
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabGuru" type="button">
+            <i class="fa-solid fa-chalkboard-user me-2"></i> Data Guru
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabAdmin" type="button">
+            <i class="fa-solid fa-users-gear me-2"></i> User Admin
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        
+        <!-- TAB 1: MANAJEMEN DATA SISWA -->
+        <div class="tab-pane fade show active" id="tabSiswa">
+          <div class="card card-dashboard p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+              <div>
+                <h5 class="fw-bold mb-0 text-primary">Database Siswa</h5>
+                <small class="text-muted" id="totalSiswaBadge">Total: 0 siswa</small>
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                <select id="filterKelasSiswa" class="form-select form-select-sm" style="width: 145px;" onchange="filterTabelSiswa()">
+                  <option value="">Semua Kelas</option>
+                </select>
+                <input type="text" id="cariSiswa" class="form-control form-control-sm" style="width: 190px;" placeholder="Cari Nama / NISN..." onkeyup="filterTabelSiswa()">
+                <button class="btn btn-success btn-sm fw-bold" onclick="bukaModalImportSiswa()">
+                  <i class="fa-solid fa-file-excel me-1"></i> Import Excel
+                </button>
+                <button class="btn btn-primary btn-sm fw-bold" onclick="bukaModalSiswa()">
+                  <i class="fa-solid fa-plus me-1"></i> Tambah Siswa
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="max-height: 550px;">
+              <table class="table table-hover table-bordered align-middle" style="font-size: 0.9rem;">
+                <thead class="table-light text-center sticky-top">
+                  <tr>
+                    <th width="7%">No</th>
+                    <th width="16%">Kelas</th>
+                    <th width="20%">NISN</th>
+                    <th>Nama Siswa</th>
+                    <th width="15%">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodySiswa">
+                  <tr><td colspan="5" class="text-center py-4 text-muted">Memuat data siswa...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: MANAJEMEN DATA GURU -->
+        <div class="tab-pane fade" id="tabGuru">
+          <div class="card card-dashboard p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+              <h5 class="fw-bold mb-0 text-primary">Daftar Guru Piket / Pengajar</h5>
+              <div class="d-flex gap-2">
+                <input type="text" id="cariGuru" class="form-control form-control-sm" placeholder="Cari Nama / NIP..." onkeyup="filterTabelGuru()">
+                <button class="btn btn-primary btn-sm fw-bold text-nowrap" onclick="bukaModalGuru()">
+                  <i class="fa-solid fa-plus me-1"></i> Tambah Guru
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="max-height: 550px;">
+              <table class="table table-hover table-bordered align-middle" style="font-size: 0.9rem;">
+                <thead class="table-light text-center sticky-top">
+                  <tr>
+                    <th width="7%">No</th>
+                    <th>Nama Guru & Gelar</th>
+                    <th width="28%">NIP</th>
+                    <th width="15%">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyGuru">
+                  <tr><td colspan="4" class="text-center py-4 text-muted">Memuat data guru...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: MANAJEMEN USER ADMIN -->
+        <div class="tab-pane fade" id="tabAdmin">
+          <div class="card card-dashboard p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0 text-primary">Daftar User Admin Piket</h5>
+              <button class="btn btn-success btn-sm fw-bold" onclick="bukaModalAdmin()">
+                <i class="fa-solid fa-user-plus me-1"></i> Tambah User Admin
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover table-bordered align-middle" style="font-size: 0.9rem;">
+                <thead class="table-light text-center">
+                  <tr>
+                    <th width="7%">No</th>
+                    <th width="20%">Username</th>
+                    <th>Nama Lengkap</th>
+                    <th width="20%">Role</th>
+                    <th width="15%">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyAdmin">
+                  <tr><td colspan="5" class="text-center py-4 text-muted">Memuat data admin...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH/EDIT SISWA -->
+  <div class="modal fade" id="modalSiswa" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px;">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="judulModalSiswa">Tambah Siswa Baru</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="formSiswa">
+            <input type="hidden" id="siswaRowIndex">
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Kelas</label>
+              <input type="text" id="siswaKelas" class="form-control" placeholder="Contoh: X TPM 1" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold small">NISN</label>
+              <input type="text" id="siswaNisn" class="form-control" placeholder="Nomor Induk Siswa Nasional (opsional)">
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold small">Nama Lengkap Siswa</label>
+              <input type="text" id="siswaNama" class="form-control" placeholder="Masukkan nama lengkap..." required>
+            </div>
+            <button type="submit" id="btnSimpanSiswa" class="btn btn-primary w-100 fw-bold py-2">Simpan Data Siswa</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL IMPORT EXCEL SISWA -->
+  <div class="modal fade" id="modalImportSiswa" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px;">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-excel me-2"></i> Import Data Siswa dari Excel</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="alert alert-info small d-flex justify-content-between align-items-center">
+            <span>Format kolom Excel wajib urut sesuai sheet SIswa: <b>Kolom A = Kelas</b>, <b>Kolom B = NISN</b>, <b>Kolom C = Nama</b>.</span>
+            <button type="button" class="btn btn-sm btn-outline-primary fw-bold text-nowrap ms-2" onclick="downloadTemplateExcel()">
+              <i class="fa-solid fa-download me-1"></i> Unduh Template
+            </button>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label fw-bold small">Pilih File Excel (.xlsx, .xls, .csv)</label>
+              <input type="file" id="fileExcelSiswa" class="form-control" accept=".xlsx, .xls, .csv" onchange="previewFileExcel(event)">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-bold small">Metode Import</label>
+              <select id="modeImportSiswa" class="form-select">
+                <option value="append">Tambahkan ke Data Lama</option>
+                <option value="replace">Timpa / Ganti Semua Data Lama</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="previewExcelBox" class="d-none">
+            <p class="small fw-bold text-success mb-2" id="infoJumlahBarisExcel">Ditemukan 0 baris data siap impor:</p>
+            <div class="table-responsive border rounded mb-3" style="max-height: 220px;">
+              <table class="table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light text-center">
+                  <tr><th>No</th><th>Kelas</th><th>NISN</th><th>Nama Siswa</th></tr>
+                </thead>
+                <tbody id="tbodyPreviewExcel"></tbody>
+              </table>
+            </div>
+            <button type="button" id="btnProsesImport" class="btn btn-success w-100 fw-bold py-2" onclick="prosesImportExcel()">
+              <i class="fa-solid fa-cloud-arrow-up me-2"></i> Mulai Upload & Simpan ke Database
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH/EDIT GURU -->
+  <div class="modal fade" id="modalGuru" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px;">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="judulModalGuru">Tambah Data Guru</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="formGuru">
+            <input type="hidden" id="guruRowIndex">
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Nama Guru & Gelar</label>
+              <input type="text" id="guruNama" class="form-control" placeholder="Contoh: Drs. EDDY PRIYO UTOMO, M.Si." required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold small">NIP (Kosongkan jika GTT/PTT)</label>
+              <input type="text" id="guruNip" class="form-control" placeholder="Contoh: 19670807 200112 1 004">
+            </div>
+            <button type="submit" id="btnSimpanGuru" class="btn btn-primary w-100 fw-bold py-2">Simpan Data Guru</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH/EDIT USER ADMIN -->
+  <div class="modal fade" id="modalAdmin" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px;">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold" id="judulModalAdmin">Tambah User Admin</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="formAdmin">
+            <input type="hidden" id="adminRowIndex">
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Nama Lengkap Petugas</label>
+              <input type="text" id="adminNama" class="form-control" placeholder="Nama lengkap..." required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Username</label>
+              <input type="text" id="adminUsername" class="form-control" placeholder="Username login..." required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Password</label>
+              <input type="text" id="adminPassword" class="form-control" placeholder="Password login..." required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold small">Role</label>
+              <select id="adminRole" class="form-select">
+                <option value="Super Admin">Super Admin</option>
+                <option value="Admin Piket">Admin Piket</option>
+              </select>
+            </div>
+            <button type="submit" id="btnSimpanAdmin" class="btn btn-success w-100 fw-bold py-2">Simpan User Admin</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // GANTI DENGAN URL DEPLOYMENT APPS SCRIPT PIKET GURU ANDA (SAMA SEPERTI DI piket.html / guru.html)
+    const RAW_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
+    const WEB_APP_URL = RAW_WEB_APP_URL.replace(/\/u\/\d+\//, '/');
+
+    let dataSiswa = [], dataGuru = [], dataAdmin = [];
+    let parsedExcelRows = [];
+    let modSiswa, modImport, modGuru, modAdmin;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      modSiswa  = new bootstrap.Modal(document.getElementById('modalSiswa'));
+      modImport = new bootstrap.Modal(document.getElementById('modalImportSiswa'));
+      modGuru   = new bootstrap.Modal(document.getElementById('modalGuru'));
+      modAdmin  = new bootstrap.Modal(document.getElementById('modalAdmin'));
+
+      const savedUser = sessionStorage.getItem("piketAdminUser");
+      if (savedUser) tampilkanDashboard(JSON.parse(savedUser));
+    });
+
+    // --- LOGIN & LOGOUT ---
+    document.getElementById('formLogin').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnLogin');
+      const alertBox = document.getElementById('loginAlert');
+      btn.disabled = true; btn.innerText = "Memverifikasi...";
+      alertBox.classList.add('d-none');
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "loginAdminPiket",
+          username: document.getElementById('loginUser').value,
+          password: document.getElementById('loginPass').value
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN';
+        if (res.success) {
+          sessionStorage.setItem("piketAdminUser", JSON.stringify(res.user));
+          tampilkanDashboard(res.user);
+        } else {
+          alertBox.innerText = res.message; alertBox.classList.remove('d-none');
+        }
+      })
+      .catch(() => {
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN';
+        alertBox.innerText = "Gagal terhubung ke server Apps Script!"; alertBox.classList.remove('d-none');
+      });
+    });
+
+    function tampilkanDashboard(user) {
+      document.getElementById('loginSection').classList.add('d-none');
+      document.getElementById('dashboardSection').classList.remove('d-none');
+      document.getElementById('infoAdminLogin').innerText = `Halo, ${user.nama} (${user.role})`;
+      muatSemuaData();
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem("piketAdminUser");
+      location.reload();
+    }
+
+    function muatSemuaData() {
+      fetch(`${WEB_APP_URL}?action=getAdminPiketData`)
+        .then(res => res.json())
+        .then(res => {
+          dataSiswa = res.siswa || [];
+          dataGuru  = res.guru || [];
+          dataAdmin = res.admin || [];
+
+          const selKelas = document.getElementById('filterKelasSiswa');
+          const curVal = selKelas.value;
+          const kelasUnik = [...new Set(dataSiswa.map(s => s.kelas).filter(Boolean))].sort();
+          selKelas.innerHTML = '<option value="">Semua Kelas</option>' + kelasUnik.map(k => `<option value="${k}">${k}</option>`).join('');
+          selKelas.value = curVal;
+
+          filterTabelSiswa();
+          renderGuru(dataGuru);
+          renderAdmin(dataAdmin);
+        });
+    }
+
+    // --- 1. RENDER & CRUD SISWA ---
+    function renderSiswa(list) {
+      document.getElementById('totalSiswaBadge').innerText = `Menampilkan: ${list.length} dari ${dataSiswa.length} siswa`;
+      const tbody = document.getElementById('tbodySiswa');
+      if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Tidak ada data siswa.</td></tr>'; return; }
+
+      tbody.innerHTML = list.map((s, i) => `<tr>
+        <td class="text-center">${i + 1}</td>
+        <td class="text-center"><span class="badge bg-secondary">${s.kelas}</span></td>
+        <td class="text-center">${s.nisn || '-'}</td>
+        <td class="fw-semibold">${s.nama}</td>
+        <td class="text-center text-nowrap">
+          <button class="btn btn-sm btn-warning" onclick="editSiswa(${s.rowIndex})"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="hapusData('hapusSiswaPiket', ${s.rowIndex}, '${s.nama.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`).join('');
+    }
+
+    function filterTabelSiswa() {
+      const kls = document.getElementById('filterKelasSiswa').value;
+      const q = document.getElementById('cariSiswa').value.toLowerCase();
+      renderSiswa(dataSiswa.filter(s =>
+        (!kls || s.kelas === kls) &&
+        (s.nama.toLowerCase().includes(q) || s.nisn.toLowerCase().includes(q))
+      ));
+    }
+
+    function bukaModalSiswa() {
+      document.getElementById('judulModalSiswa').innerText = "Tambah Siswa Baru";
+      document.getElementById('siswaRowIndex').value = "";
+      document.getElementById('formSiswa').reset();
+      modSiswa.show();
+    }
+
+    function editSiswa(rIdx) {
+      const s = dataSiswa.find(x => x.rowIndex === rIdx);
+      if (!s) return;
+      document.getElementById('judulModalSiswa').innerText = "Edit Data Siswa";
+      document.getElementById('siswaRowIndex').value = s.rowIndex;
+      document.getElementById('siswaKelas').value = s.kelas;
+      document.getElementById('siswaNisn').value = s.nisn;
+      document.getElementById('siswaNama').value = s.nama;
+      modSiswa.show();
+    }
+
+    document.getElementById('formSiswa').addEventListener('submit', function(e) {
+      e.preventDefault();
+      kirimPost({
+        action: "simpanSiswaPiket",
+        rowIndex: document.getElementById('siswaRowIndex').value,
+        kelas: document.getElementById('siswaKelas').value,
+        nisn: document.getElementById('siswaNisn').value,
+        nama: document.getElementById('siswaNama').value
+      }, 'btnSimpanSiswa', modSiswa);
+    });
+
+    // Import Excel Siswa (Urutan Kolom Sheet SIswa: A=Kelas, B=NISN, C=Nama)
+    function bukaModalImportSiswa() {
+      document.getElementById('fileExcelSiswa').value = "";
+      document.getElementById('previewExcelBox').classList.add('d-none');
+      parsedExcelRows = [];
+      modImport.show();
+    }
+    function downloadTemplateExcel() {
+      const ws = XLSX.utils.aoa_to_sheet([
+        ["Kelas", "NISN", "Nama"],
+        ["X TPM 1", "0102345678", "ABDUL ADNAN MASQURI"],
+        ["X TPM 1", "0102345679", "ACMAD RIFQI ARDIANSYAH"]
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Template_Siswa");
+      XLSX.writeFile(wb, "Template_Import_Siswa_Piket.xlsx");
+    }
+    function previewFileExcel(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        parsedExcelRows = [];
+        for (let i = 1; i < jsonRows.length; i++) {
+          const r = jsonRows[i];
+          if (r && r[0] && r[2]) {
+            parsedExcelRows.push({
+              kelas: String(r[0]).trim(),
+              nisn: r[1] ? String(r[1]).trim() : "",
+              nama: String(r[2]).trim()
+            });
+          }
+        }
+
+        document.getElementById('infoJumlahBarisExcel').innerText = `Ditemukan ${parsedExcelRows.length} data siswa siap diimpor:`;
+        document.getElementById('tbodyPreviewExcel').innerHTML = parsedExcelRows.slice(0, 50).map((r, idx) =>
+          `<tr><td class="text-center">${idx + 1}</td><td>${r.kelas}</td><td>${r.nisn}</td><td>${r.nama}</td></tr>`
+        ).join('') + (parsedExcelRows.length > 50 ? `<tr><td colspan="4" class="text-center text-muted">...dan ${parsedExcelRows.length - 50} baris lainnya</td></tr>` : '');
+
+        document.getElementById('previewExcelBox').classList.remove('d-none');
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    function prosesImportExcel() {
+      if (parsedExcelRows.length === 0) return alert("Data Excel kosong!");
+      const mode = document.getElementById('modeImportSiswa').value;
+      if (mode === "replace" && !confirm("PERHATIAN: Semua data siswa lama akan dihapus dan diganti data baru dari Excel ini. Lanjutkan?")) return;
+
+      kirimPost({
+        action: "importSiswaPiketExcel",
+        rows: parsedExcelRows,
+        mode: mode
+      }, 'btnProsesImport', modImport);
+    }
+
+    // --- 2. RENDER & CRUD GURU ---
+    function renderGuru(list) {
+      const tbody = document.getElementById('tbodyGuru');
+      if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data guru.</td></tr>'; return; }
+      tbody.innerHTML = list.map((g, i) => `<tr>
+        <td class="text-center">${i + 1}</td>
+        <td class="fw-semibold">${g.nama}</td>
+        <td class="text-center">${g.nip || '-'}</td>
+        <td class="text-center text-nowrap">
+          <button class="btn btn-sm btn-warning" onclick="editGuru(${g.rowIndex})"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="hapusData('hapusGuruPiket', ${g.rowIndex}, '${g.nama.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`).join('');
+    }
+    function filterTabelGuru() {
+      const q = document.getElementById('cariGuru').value.toLowerCase();
+      renderGuru(dataGuru.filter(g => g.nama.toLowerCase().includes(q) || g.nip.toLowerCase().includes(q)));
+    }
+    function bukaModalGuru() {
+      document.getElementById('judulModalGuru').innerText = "Tambah Data Guru";
+      document.getElementById('guruRowIndex').value = "";
+      document.getElementById('formGuru').reset();
+      modGuru.show();
+    }
+    function editGuru(rIdx) {
+      const g = dataGuru.find(x => x.rowIndex === rIdx);
+      if (!g) return;
+      document.getElementById('judulModalGuru').innerText = "Edit Data Guru";
+      document.getElementById('guruRowIndex').value = g.rowIndex;
+      document.getElementById('guruNama').value = g.nama;
+      document.getElementById('guruNip').value = g.nip;
+      modGuru.show();
+    }
+    document.getElementById('formGuru').addEventListener('submit', function(e) {
+      e.preventDefault();
+      kirimPost({
+        action: "simpanGuruPiket",
+        rowIndex: document.getElementById('guruRowIndex').value,
+        nama: document.getElementById('guruNama').value,
+        nip: document.getElementById('guruNip').value
+      }, 'btnSimpanGuru', modGuru);
+    });
+
+    // --- 3. RENDER & CRUD USER ADMIN ---
+    function renderAdmin(list) {
+      const tbody = document.getElementById('tbodyAdmin');
+      tbody.innerHTML = list.map((a, i) => `<tr>
+        <td class="text-center">${i + 1}</td>
+        <td class="fw-bold text-primary">${a.username}</td>
+        <td>${a.nama}</td>
+        <td class="text-center"><span class="badge bg-dark">${a.role}</span></td>
+        <td class="text-center text-nowrap">
+          <button class="btn btn-sm btn-warning" onclick="editAdmin(${a.rowIndex})"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="hapusData('hapusAdminPiket', ${a.rowIndex}, '${a.username}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`).join('');
+    }
+    function bukaModalAdmin() {
+      document.getElementById('judulModalAdmin').innerText = "Tambah User Admin";
+      document.getElementById('adminRowIndex').value = "";
+      document.getElementById('formAdmin').reset();
+      modAdmin.show();
+    }
+    function editAdmin(rIdx) {
+      const a = dataAdmin.find(x => x.rowIndex === rIdx);
+      if (!a) return;
+      document.getElementById('judulModalAdmin').innerText = "Edit User Admin";
+      document.getElementById('adminRowIndex').value = a.rowIndex;
+      document.getElementById('adminNama').value = a.nama;
+      document.getElementById('adminUsername').value = a.username;
+      document.getElementById('adminPassword').value = a.password;
+      document.getElementById('adminRole').value = a.role;
+      modAdmin.show();
+    }
+    document.getElementById('formAdmin').addEventListener('submit', function(e) {
+      e.preventDefault();
+      kirimPost({
+        action: "simpanAdminPiket",
+        rowIndex: document.getElementById('adminRowIndex').value,
+        nama: document.getElementById('adminNama').value,
+        username: document.getElementById('adminUsername').value,
+        password: document.getElementById('adminPassword').value,
+        role: document.getElementById('adminRole').value
+      }, 'btnSimpanAdmin', modAdmin);
+    });
+
+    // --- HELPER POST & DELETE ---
+    function kirimPost(payload, btnId, modalObj) {
+      const btn = document.getElementById(btnId);
+      const oldText = btn.innerHTML;
+      btn.disabled = true; btn.innerText = "Menyimpan...";
+
+      fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          btn.disabled = false; btn.innerHTML = oldText;
+          if (res.success) {
+            modalObj.hide();
+            muatSemuaData();
+          } else {
+            alert(res.message);
+          }
+        })
+        .catch(() => {
+          btn.disabled = false; btn.innerHTML = oldText;
+          alert("Terjadi kesalahan jaringan saat menyimpan data.");
+        });
+    }
+
+    function hapusData(actionName, rowIndex, label) {
+      if (!confirm(`Yakin ingin menghapus "${label}"?`)) return;
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: actionName, rowIndex: rowIndex })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) muatSemuaData();
+        else alert(res.message);
+      });
+    }
+  </script>
+</body>
+</html>
