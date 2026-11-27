@@ -7,7 +7,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- LIBRARY SHEETJS & SWEETALERT2 -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body { background-color: #f0f4f8; font-family: 'Poppins', sans-serif; min-height: 100vh; }
     .login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 20px; }
@@ -29,8 +31,6 @@
       </div>
       <h4 class="fw-bold text-primary mb-1">ADMIN PIKET GURU</h4>
       <p class="text-muted small mb-4">SMK Negeri 1 Purwoasri</p>
-
-      <div id="loginAlert" class="alert alert-danger d-none small py-2"></div>
 
       <form id="formLogin">
         <div class="mb-3 text-start">
@@ -371,7 +371,7 @@
                   <i class="fa-solid fa-plus"></i> Tambahkan
                 </button>
               </div>
-              <textarea id="jadwalGuruPiket" class="form-control form-control-sm" rows="2" placeholder="Nama Guru Piket (pisahkan dengan koma atau baris baru)..."></textarea>
+              <textarea id="jadwalGuruPiket" class="form-control form-control-sm" rows="2" placeholder="Klik + Tambahkan di atas atau ketik manual nama Guru Piket..."></textarea>
             </div>
 
             <!-- PILIH GURU KELAS -->
@@ -385,13 +385,13 @@
                   <i class="fa-solid fa-plus"></i> Tambahkan
                 </button>
               </div>
-              <textarea id="jadwalGuruKelas" class="form-control form-control-sm" rows="2" placeholder="Nama Guru Kelas (pisahkan dengan koma atau baris baru)..."></textarea>
+              <textarea id="jadwalGuruKelas" class="form-control form-control-sm" rows="2" placeholder="Klik + Tambahkan di atas atau ketik manual nama Guru Kelas..."></textarea>
             </div>
 
             <!-- INPUT PETUGAS SECURITY -->
             <div class="mb-4">
               <label class="form-label fw-bold small text-dark">3. Petugas Security</label>
-              <input type="text" id="jadwalSecurity" class="form-control form-control-sm" placeholder="Contoh: Bpk. Sutrisno / Bpk. Budi">
+              <input type="text" id="jadwalSecurity" class="form-control form-control-sm" placeholder="Contoh: Bpk. Eko Santoso">
             </div>
 
             <button type="submit" id="btnSimpanJadwal" class="btn btn-primary w-100 fw-bold py-2">
@@ -443,12 +443,21 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // GANTI DENGAN URL DEPLOYMENT APPS SCRIPT PIKET GURU ANDA (SAMA SEPERTI DI piket.html / guru.html)
-    const RAW_WEB_APP_URL = "https://script.google.com/macros/s/GANTI_DENGAN_ID_DEPLOYMENT_PIKET_GURU_ANDA/exec";
+    const RAW_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
     const WEB_APP_URL = RAW_WEB_APP_URL.replace(/\/u\/\d+\//, '/');
 
     let dataSiswa = [], dataGuru = [], dataJadwal = [], dataAdmin = [];
     let parsedExcelRows = [];
     let modSiswa, modImport, modGuru, modJadwal, modAdmin;
+
+    // Helper SweetAlert2 Toast & Popup
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
 
     document.addEventListener("DOMContentLoaded", function() {
       modSiswa  = new bootstrap.Modal(document.getElementById('modalSiswa'));
@@ -465,9 +474,7 @@
     document.getElementById('formLogin').addEventListener('submit', function(e) {
       e.preventDefault();
       const btn = document.getElementById('btnLogin');
-      const alertBox = document.getElementById('loginAlert');
       btn.disabled = true; btn.innerText = "Memverifikasi...";
-      alertBox.classList.add('d-none');
 
       fetch(WEB_APP_URL, {
         method: 'POST',
@@ -482,14 +489,15 @@
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN';
         if (res.success) {
           sessionStorage.setItem("piketAdminUser", JSON.stringify(res.user));
+          Toast.fire({ icon: 'success', title: 'Login berhasil! Selamat datang.' });
           tampilkanDashboard(res.user);
         } else {
-          alertBox.innerText = res.message; alertBox.classList.remove('d-none');
+          Swal.fire({ icon: 'error', title: 'Login Gagal', text: res.message, confirmButtonColor: '#1e3a8a' });
         }
       })
       .catch(() => {
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN';
-        alertBox.innerText = "Gagal terhubung ke server Apps Script! Pastikan URL API benar."; alertBox.classList.remove('d-none');
+        Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Gagal terhubung ke server Apps Script! Pastikan URL API sudah benar.', confirmButtonColor: '#1e3a8a' });
       });
     });
 
@@ -501,8 +509,20 @@
     }
 
     function logoutAdmin() {
-      sessionStorage.removeItem("piketAdminUser");
-      location.reload();
+      Swal.fire({
+        title: 'Keluar dari Panel Admin?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Keluar',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          sessionStorage.removeItem("piketAdminUser");
+          location.reload();
+        }
+      });
     }
 
     function muatSemuaData() {
@@ -514,14 +534,12 @@
           dataJadwal = res.jadwal || [];
           dataAdmin  = res.admin || [];
 
-          // Isi dropdown filter kelas
           const selKelas = document.getElementById('filterKelasSiswa');
           const curVal = selKelas.value;
           const kelasUnik = [...new Set(dataSiswa.map(s => s.kelas).filter(Boolean))].sort();
           selKelas.innerHTML = '<option value="">Semua Kelas</option>' + kelasUnik.map(k => `<option value="${k}">${k}</option>`).join('');
           selKelas.value = curVal;
 
-          // Isi dropdown daftar guru pada modal jadwal piket
           const opsiGuru = '<option value="">-- Pilih dari Daftar Guru --</option>' +
             dataGuru.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
           document.getElementById('pilihGuruPiket').innerHTML = opsiGuru;
@@ -531,6 +549,9 @@
           renderGuru(dataGuru);
           renderJadwal(dataJadwal);
           renderAdmin(dataAdmin);
+        })
+        .catch(() => {
+          Swal.fire({ icon: 'error', title: 'Gagal Memuat Data', text: 'Pastikan Google Apps Script sudah di-deploy Versi Baru.', confirmButtonColor: '#1e3a8a' });
         });
     }
 
@@ -590,7 +611,7 @@
       }, 'btnSimpanSiswa', modSiswa);
     });
 
-    // Import Excel Siswa (Kolom A=Kelas, B=NISN, C=Nama)
+    // Import Excel Siswa
     function bukaModalImportSiswa() {
       document.getElementById('fileExcelSiswa').value = "";
       document.getElementById('previewExcelBox').classList.add('d-none');
@@ -639,15 +660,29 @@
       reader.readAsArrayBuffer(file);
     }
     function prosesImportExcel() {
-      if (parsedExcelRows.length === 0) return alert("Data Excel kosong!");
+      if (parsedExcelRows.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada baris valid pada file Excel tersebut!', confirmButtonColor: '#1e3a8a' });
+        return;
+      }
       const mode = document.getElementById('modeImportSiswa').value;
-      if (mode === "replace" && !confirm("PERHATIAN: Semua data siswa lama akan dihapus dan diganti data baru dari Excel ini. Lanjutkan?")) return;
-
-      kirimPost({
-        action: "importSiswaPiketExcel",
-        rows: parsedExcelRows,
-        mode: mode
-      }, 'btnProsesImport', modImport);
+      if (mode === "replace") {
+        Swal.fire({
+          title: 'Timpa Semua Data Lama?',
+          text: 'Seluruh data siswa lama akan dihapus dan digantikan oleh data baru dari file Excel ini.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Ya, Timpa Data',
+          cancelButtonText: 'Batal'
+        }).then((res) => {
+          if (res.isConfirmed) {
+            kirimPost({ action: "importSiswaPiketExcel", rows: parsedExcelRows, mode: mode }, 'btnProsesImport', modImport);
+          }
+        });
+      } else {
+        kirimPost({ action: "importSiswaPiketExcel", rows: parsedExcelRows, mode: mode }, 'btnProsesImport', modImport);
+      }
     }
 
     // --- 2. RENDER & CRUD GURU ---
@@ -728,7 +763,10 @@
     function tambahKeDaftar(selectId, textareaId) {
       const sel = document.getElementById(selectId);
       const txt = document.getElementById(textareaId);
-      if (!sel.value) return;
+      if (!sel.value) {
+        Toast.fire({ icon: 'info', title: 'Pilih nama guru di dropdown terlebih dahulu.' });
+        return;
+      }
 
       const current = txt.value.trim();
       if (current === "") {
@@ -753,12 +791,16 @@
 
     document.getElementById('formJadwal').addEventListener('submit', function(e) {
       e.preventDefault();
+      // Otomatis ambil nilai dropdown jika admin lupa klik "+ Tambahkan" dan kotak teks masih kosong
+      const gpText = document.getElementById('jadwalGuruPiket').value.trim() || document.getElementById('pilihGuruPiket').value;
+      const gkText = document.getElementById('jadwalGuruKelas').value.trim() || document.getElementById('pilihGuruKelas').value;
+
       kirimPost({
         action: "simpanJadwalPiket",
         rowIndex: document.getElementById('jadwalRowIndex').value,
         hari: document.getElementById('jadwalHari').value,
-        guruPiket: document.getElementById('jadwalGuruPiket').value,
-        guruKelas: document.getElementById('jadwalGuruKelas').value,
+        guruPiket: gpText,
+        guruKelas: gkText,
         security: document.getElementById('jadwalSecurity').value
       }, 'btnSimpanJadwal', modJadwal);
     });
@@ -806,7 +848,7 @@
       }, 'btnSimpanAdmin', modAdmin);
     });
 
-    // --- HELPER POST & DELETE ---
+    // --- HELPER POST & DELETE DENGAN SWEETALERT2 ---
     function kirimPost(payload, btnId, modalObj) {
       const btn = document.getElementById(btnId);
       const oldText = btn.innerHTML;
@@ -818,27 +860,54 @@
           btn.disabled = false; btn.innerHTML = oldText;
           if (res.success) {
             modalObj.hide();
+            Swal.fire({
+              icon: 'success',
+              title: 'Berhasil!',
+              text: res.message,
+              timer: 1800,
+              showConfirmButton: false
+            });
             muatSemuaData();
           } else {
-            alert(res.message);
+            Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: res.message, confirmButtonColor: '#1e3a8a' });
           }
         })
         .catch(() => {
           btn.disabled = false; btn.innerHTML = oldText;
-          alert("Terjadi kesalahan jaringan saat menyimpan data.");
+          Swal.fire({ icon: 'error', title: 'Kesalahan Jaringan', text: 'Terjadi kesalahan jaringan saat menghubungi server.', confirmButtonColor: '#1e3a8a' });
         });
     }
 
     function hapusData(actionName, rowIndex, label) {
-      if (!confirm(`Yakin ingin menghapus "${label}"?`)) return;
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: actionName, rowIndex: rowIndex })
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) muatSemuaData();
-        else alert(res.message);
+      Swal.fire({
+        title: 'Hapus Data Ini?',
+        html: `Anda yakin ingin menghapus <b>"${label}"</b>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: actionName, rowIndex: rowIndex })
+          })
+          .then(res => res.json())
+          .then(res => {
+            if (res.success) {
+              Swal.fire({ icon: 'success', title: 'Terhapus!', text: res.message, timer: 1600, showConfirmButton: false });
+              muatSemuaData();
+            } else {
+              Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: res.message, confirmButtonColor: '#1e3a8a' });
+            }
+          })
+          .catch(() => {
+            Swal.fire({ icon: 'error', title: 'Kesalahan Jaringan', text: 'Gagal menghubungi server saat menghapus.', confirmButtonColor: '#1e3a8a' });
+          });
+        }
       });
     }
   </script>
