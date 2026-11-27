@@ -196,7 +196,6 @@
     }
 
     window.onload = function() {
-      // Tampilkan tanggal Indonesia saat ini
       const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('badgeTanggalHariIni').innerText = now.toLocaleDateString('id-ID', opsiTanggal);
       document.getElementById('labelHariIni').innerText = namaHariIni;
@@ -237,8 +236,39 @@
       }
     }
 
+    // Mencocokkan nama utuh (beserta gelar) dari Master Guru terhadap teks jadwal hari ini
+    async function ambilPetugasSesuaiJadwal(role) {
+      if (!jadwalHariIniCache) {
+        await muatJadwalHariIni();
+      }
+
+      const rawStr = jadwalHariIniCache
+        ? (role === "guruPiket" ? jadwalHariIniCache.guruPiket : jadwalHariIniCache.security)
+        : "";
+
+      const master = await fetch(`${WEB_APP_URL}?action=getMasterData&_t=${Date.now()}`).then(r => r.json());
+      const semuaGuru = master.guru || [];
+
+      if (!rawStr || rawStr.trim() === "") {
+        return semuaGuru;
+      }
+
+      const rawLower = rawStr.toLowerCase();
+      // Filter nama utuh dari Master Guru agar gelar (misal ", S.Pd.") tetap menyatu dalam satu baris
+      const cocokMaster = semuaGuru.filter(namaUtuh => rawLower.includes(namaUtuh.trim().toLowerCase()));
+
+      if (cocokMaster.length > 0) {
+        return cocokMaster;
+      }
+
+      // Cadangan jika petugas (misal Security) belum tercatat di Master Guru
+      return String(rawStr)
+        .split(/[\n;\/]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
     async function bukaDialogLoginPetugas(role, targetUrl) {
-      // Jika sesi sudah aktif di tab ini, langsung arahkan ke halaman tujuan
       const sesiKey = role === "guruPiket" ? "sesiGuruPiket" : "sesiSecurity";
       if (sessionStorage.getItem(sesiKey)) {
         window.location.href = targetUrl;
@@ -255,20 +285,7 @@
 
       let daftarOpsi = [];
       try {
-        if (!jadwalHariIniCache) {
-          await muatJadwalHariIni();
-        }
-
-        if (jadwalHariIniCache) {
-          const rawStr = role === "guruPiket" ? jadwalHariIniCache.guruPiket : jadwalHariIniCache.security;
-          daftarOpsi = String(rawStr || "").split(/[,\/;\n]/).map(s => s.trim()).filter(Boolean);
-        }
-
-        // Cadangan: jika jadwal hari ini kosong (misal Sabtu/Minggu atau belum diatur), tampilkan daftar master guru
-        if (daftarOpsi.length === 0) {
-          const master = await fetch(`${WEB_APP_URL}?action=getMasterData`).then(r => r.json());
-          daftarOpsi = master.guru || [];
-        }
+        daftarOpsi = await ambilPetugasSesuaiJadwal(role);
       } catch (e) {
         Swal.fire('Koneksi Gagal', 'Tidak dapat mengambil data jadwal dari server.', 'error');
         return;
@@ -276,7 +293,7 @@
 
       const optionsHtml = daftarOpsi.map(nama => `<option value="${nama}">${nama}</option>`).join('');
 
-      const { value: formValues } = await Swal.fire({
+      const result = await Swal.fire({
         title: judul,
         html: `
           <div class="text-start">
@@ -298,59 +315,56 @@
         confirmButtonText: 'Verifikasi & Masuk',
         cancelButtonText: 'Batal',
         confirmButtonColor: role === "guruPiket" ? '#1e3a8a' : '#0dcaf0',
-        preConfirm: () => {
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
           const nama = document.getElementById('swalNamaPetugas').value;
           const password = document.getElementById('swalPassPetugas').value;
           if (!nama || !password) {
             Swal.showValidationMessage('Nama petugas dan password wajib diisi!');
             return false;
           }
-          return { nama, password };
+
+          try {
+            const response = await fetch(WEB_APP_URL, {
+              method: 'POST',
+              body: JSON.stringify({
+                action: "loginPetugasPiket",
+                role: role,
+                nama: nama,
+                password: password
+              })
+            });
+            const res = await response.json();
+
+            if (!res || typeof res.success === "undefined") {
+              Swal.showValidationMessage('Server Apps Script belum di-deploy ke Versi Baru! Silakan Deploy > Versi Baru di Kode.gs.');
+              return false;
+            }
+            if (!res.success) {
+              Swal.showValidationMessage(res.message);
+              return false;
+            }
+            return res;
+          } catch (err) {
+            Swal.showValidationMessage('Gagal terhubung ke server Apps Script: ' + err.message);
+            return false;
+          }
         }
       });
 
-      if (!formValues) return;
-
-      Swal.fire({
-        title: 'Memverifikasi Jadwal & Password...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: "loginPetugasPiket",
-          role: role,
-          nama: formValues.nama,
-          password: formValues.password
-        })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) {
-          sessionStorage.setItem(sesiKey, JSON.stringify(res.petugas));
-          Swal.fire({
-            icon: 'success',
-            title: 'Berhasil Masuk!',
-            text: res.message,
-            timer: 1200,
-            showConfirmButton: false
-          }).then(() => {
-            window.location.href = targetUrl;
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Akses Ditolak',
-            text: res.message,
-            confirmButtonColor: '#1e3a8a'
-          });
-        }
-      })
-      .catch(() => {
-        Swal.fire('Kesalahan Jaringan', 'Gagal terhubung ke server Apps Script.', 'error');
-      });
+      if (result.isConfirmed && result.value && result.value.success) {
+        sessionStorage.setItem(sesiKey, JSON.stringify(result.value.petugas));
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Masuk!',
+          text: result.value.message,
+          timer: 1200,
+          showConfirmButton: false
+        }).then(() => {
+          window.location.href = targetUrl;
+        });
+      }
     }
   </script>
 </body>
