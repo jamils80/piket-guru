@@ -14,7 +14,7 @@
     .login-card { background: #fff; border-radius: 20px; padding: 35px; width: 100%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); }
     .navbar-custom { background: linear-gradient(90deg, #1e3a8a, #2563eb); }
     .card-dashboard { border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .nav-pills .nav-link { font-weight: 600; border-radius: 12px; padding: 10px 20px; color: #1e3a8a; }
+    .nav-pills .nav-link { font-weight: 600; border-radius: 12px; padding: 10px 18px; color: #1e3a8a; }
     .nav-pills .nav-link.active { background-color: #1e3a8a; color: #fff; }
   </style>
 </head>
@@ -46,7 +46,9 @@
         </button>
       </form>
       <div class="mt-3">
-        <a href="index.html" class="text-decoration-none small text-secondary"><i class="fa-solid fa-arrow-left me-1"></i> Kembali ke Beranda Piket</a>
+        <a href="index.html" class="text-decoration-none small text-secondary">
+          <i class="fa-solid fa-arrow-left me-1"></i> Kembali ke Beranda Piket
+        </a>
       </div>
     </div>
   </div>
@@ -75,6 +77,11 @@
         <li class="nav-item">
           <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabGuru" type="button">
             <i class="fa-solid fa-chalkboard-user me-2"></i> Data Guru
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabJadwal" type="button">
+            <i class="fa-solid fa-calendar-week me-2"></i> Jadwal Piket
           </button>
         </li>
         <li class="nav-item">
@@ -158,7 +165,36 @@
           </div>
         </div>
 
-        <!-- TAB 3: MANAJEMEN USER ADMIN -->
+        <!-- TAB 3: MANAJEMEN JADWAL PIKET SENIN - JUMAT -->
+        <div class="tab-pane fade" id="tabJadwal">
+          <div class="card card-dashboard p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 class="fw-bold mb-0 text-primary">Jadwal Petugas Piket (Senin – Jumat)</h5>
+                <small class="text-muted">Klik tombol <b>Atur</b> pada masing-masing hari untuk memilih Guru Piket, Guru Kelas, dan Security.</small>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover table-bordered align-middle" style="font-size: 0.9rem;">
+                <thead class="table-light text-center">
+                  <tr>
+                    <th width="12%">Hari</th>
+                    <th width="30%">Guru Piket</th>
+                    <th width="30%">Guru Kelas</th>
+                    <th width="16%">Security</th>
+                    <th width="12%">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyJadwal">
+                  <tr><td colspan="5" class="text-center py-4 text-muted">Memuat jadwal piket...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: MANAJEMEN USER ADMIN -->
         <div class="tab-pane fade" id="tabAdmin">
           <div class="card card-dashboard p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -296,6 +332,62 @@
     </div>
   </div>
 
+  <!-- MODAL ATUR JADWAL PIKET HARIAN -->
+  <div class="modal fade" id="modalJadwal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px;">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="judulModalJadwal">Atur Jadwal Piket - Senin</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="formJadwal">
+            <input type="hidden" id="jadwalRowIndex">
+            <input type="hidden" id="jadwalHari">
+
+            <!-- PILIH GURU PIKET -->
+            <div class="mb-3">
+              <label class="form-label fw-bold small text-primary">1. Guru Piket</label>
+              <div class="input-group input-group-sm mb-2">
+                <select id="pilihGuruPiket" class="form-select">
+                  <option value="">-- Pilih dari Daftar Guru --</option>
+                </select>
+                <button type="button" class="btn btn-outline-primary fw-bold" onclick="tambahKeDaftar('pilihGuruPiket', 'jadwalGuruPiket')">
+                  <i class="fa-solid fa-plus"></i> Tambahkan
+                </button>
+              </div>
+              <textarea id="jadwalGuruPiket" class="form-control form-control-sm" rows="2" placeholder="Nama Guru Piket (pisahkan dengan koma atau baris baru)..."></textarea>
+            </div>
+
+            <!-- PILIH GURU KELAS -->
+            <div class="mb-3">
+              <label class="form-label fw-bold small text-success">2. Guru Kelas</label>
+              <div class="input-group input-group-sm mb-2">
+                <select id="pilihGuruKelas" class="form-select">
+                  <option value="">-- Pilih dari Daftar Guru --</option>
+                </select>
+                <button type="button" class="btn btn-outline-success fw-bold" onclick="tambahKeDaftar('pilihGuruKelas', 'jadwalGuruKelas')">
+                  <i class="fa-solid fa-plus"></i> Tambahkan
+                </button>
+              </div>
+              <textarea id="jadwalGuruKelas" class="form-control form-control-sm" rows="2" placeholder="Nama Guru Kelas (pisahkan dengan koma atau baris baru)..."></textarea>
+            </div>
+
+            <!-- INPUT PETUGAS SECURITY -->
+            <div class="mb-4">
+              <label class="form-label fw-bold small text-dark">3. Petugas Security</label>
+              <input type="text" id="jadwalSecurity" class="form-control form-control-sm" placeholder="Contoh: Bpk. Sutrisno / Bpk. Budi">
+            </div>
+
+            <button type="submit" id="btnSimpanJadwal" class="btn btn-primary w-100 fw-bold py-2">
+              <i class="fa-solid fa-floppy-disk me-2"></i> Simpan Jadwal Hari Ini
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL TAMBAH/EDIT USER ADMIN -->
   <div class="modal fade" id="modalAdmin" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -339,14 +431,15 @@
     const RAW_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
     const WEB_APP_URL = RAW_WEB_APP_URL.replace(/\/u\/\d+\//, '/');
 
-    let dataSiswa = [], dataGuru = [], dataAdmin = [];
+    let dataSiswa = [], dataGuru = [], dataJadwal = [], dataAdmin = [];
     let parsedExcelRows = [];
-    let modSiswa, modImport, modGuru, modAdmin;
+    let modSiswa, modImport, modGuru, modJadwal, modAdmin;
 
     document.addEventListener("DOMContentLoaded", function() {
       modSiswa  = new bootstrap.Modal(document.getElementById('modalSiswa'));
       modImport = new bootstrap.Modal(document.getElementById('modalImportSiswa'));
       modGuru   = new bootstrap.Modal(document.getElementById('modalGuru'));
+      modJadwal = new bootstrap.Modal(document.getElementById('modalJadwal'));
       modAdmin  = new bootstrap.Modal(document.getElementById('modalAdmin'));
 
       const savedUser = sessionStorage.getItem("piketAdminUser");
@@ -381,7 +474,7 @@
       })
       .catch(() => {
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN';
-        alertBox.innerText = "Gagal terhubung ke server Apps Script!"; alertBox.classList.remove('d-none');
+        alertBox.innerText = "Gagal terhubung ke server Apps Script! Pastikan URL API benar."; alertBox.classList.remove('d-none');
       });
     });
 
@@ -401,18 +494,27 @@
       fetch(`${WEB_APP_URL}?action=getAdminPiketData`)
         .then(res => res.json())
         .then(res => {
-          dataSiswa = res.siswa || [];
-          dataGuru  = res.guru || [];
-          dataAdmin = res.admin || [];
+          dataSiswa  = res.siswa || [];
+          dataGuru   = res.guru || [];
+          dataJadwal = res.jadwal || [];
+          dataAdmin  = res.admin || [];
 
+          // Isi dropdown filter kelas
           const selKelas = document.getElementById('filterKelasSiswa');
           const curVal = selKelas.value;
           const kelasUnik = [...new Set(dataSiswa.map(s => s.kelas).filter(Boolean))].sort();
           selKelas.innerHTML = '<option value="">Semua Kelas</option>' + kelasUnik.map(k => `<option value="${k}">${k}</option>`).join('');
           selKelas.value = curVal;
 
+          // Isi dropdown daftar guru pada modal jadwal piket
+          const opsiGuru = '<option value="">-- Pilih dari Daftar Guru --</option>' +
+            dataGuru.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
+          document.getElementById('pilihGuruPiket').innerHTML = opsiGuru;
+          document.getElementById('pilihGuruKelas').innerHTML = opsiGuru;
+
           filterTabelSiswa();
           renderGuru(dataGuru);
+          renderJadwal(dataJadwal);
           renderAdmin(dataAdmin);
         });
     }
@@ -473,7 +575,7 @@
       }, 'btnSimpanSiswa', modSiswa);
     });
 
-    // Import Excel Siswa (Urutan Kolom Sheet SIswa: A=Kelas, B=NISN, C=Nama)
+    // Import Excel Siswa (Kolom A=Kelas, B=NISN, C=Nama)
     function bukaModalImportSiswa() {
       document.getElementById('fileExcelSiswa').value = "";
       document.getElementById('previewExcelBox').classList.add('d-none');
@@ -576,7 +678,67 @@
       }, 'btnSimpanGuru', modGuru);
     });
 
-    // --- 3. RENDER & CRUD USER ADMIN ---
+    // --- 3. RENDER & EDIT JADWAL PIKET (SENIN - JUMAT) ---
+    function renderJadwal(list) {
+      const tbody = document.getElementById('tbodyJadwal');
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Belum ada data jadwal.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(j => `
+        <tr>
+          <td class="text-center fw-bold text-primary">${j.hari}</td>
+          <td>${j.guruPiket ? j.guruPiket.replace(/\n/g, '<br>') : '<span class="text-muted fst-italic">Belum diatur</span>'}</td>
+          <td>${j.guruKelas ? j.guruKelas.replace(/\n/g, '<br>') : '<span class="text-muted fst-italic">Belum diatur</span>'}</td>
+          <td class="text-center fw-semibold">${j.security || '<span class="text-muted fst-italic">-</span>'}</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-warning fw-bold" onclick="editJadwal(${j.rowIndex})">
+              <i class="fa-solid fa-pen-to-square me-1"></i> Atur
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function tambahKeDaftar(selectId, textareaId) {
+      const sel = document.getElementById(selectId);
+      const txt = document.getElementById(textareaId);
+      if (!sel.value) return;
+
+      const current = txt.value.trim();
+      if (current === "") {
+        txt.value = sel.value;
+      } else if (!current.includes(sel.value)) {
+        txt.value = current + ", " + sel.value;
+      }
+      sel.value = "";
+    }
+
+    function editJadwal(rIdx) {
+      const j = dataJadwal.find(x => x.rowIndex === rIdx);
+      if (!j) return;
+      document.getElementById('judulModalJadwal').innerText = "Atur Jadwal Piket - Hari " + j.hari;
+      document.getElementById('jadwalRowIndex').value = j.rowIndex;
+      document.getElementById('jadwalHari').value = j.hari;
+      document.getElementById('jadwalGuruPiket').value = j.guruPiket;
+      document.getElementById('jadwalGuruKelas').value = j.guruKelas;
+      document.getElementById('jadwalSecurity').value = j.security;
+      modJadwal.show();
+    }
+
+    document.getElementById('formJadwal').addEventListener('submit', function(e) {
+      e.preventDefault();
+      kirimPost({
+        action: "simpanJadwalPiket",
+        rowIndex: document.getElementById('jadwalRowIndex').value,
+        hari: document.getElementById('jadwalHari').value,
+        guruPiket: document.getElementById('jadwalGuruPiket').value,
+        guruKelas: document.getElementById('jadwalGuruKelas').value,
+        security: document.getElementById('jadwalSecurity').value
+      }, 'btnSimpanJadwal', modJadwal);
+    });
+
+    // --- 4. RENDER & CRUD USER ADMIN ---
     function renderAdmin(list) {
       const tbody = document.getElementById('tbodyAdmin');
       tbody.innerHTML = list.map((a, i) => `<tr>
