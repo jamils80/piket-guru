@@ -7,7 +7,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- LIBRARY SHEETJS & SWEETALERT2 -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
@@ -165,13 +164,13 @@
           </div>
         </div>
 
-        <!-- TAB 3: MANAJEMEN JADWAL PIKET (INPUT, EDIT, HAPUS) -->
+        <!-- TAB 3: MANAJEMEN JADWAL PIKET (GURU PIKET & SECURITY) -->
         <div class="tab-pane fade" id="tabJadwal">
           <div class="card card-dashboard p-4">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <div>
                 <h5 class="fw-bold mb-0 text-primary">Jadwal Petugas Piket (Senin – Jumat)</h5>
-                <small class="text-muted">Kelola jadwal Guru Piket, Guru Kelas, dan Security setiap harinya.</small>
+                <small class="text-muted">Kelola jadwal Guru Piket dan Petugas Security setiap harinya.</small>
               </div>
               <button class="btn btn-primary btn-sm fw-bold" onclick="bukaModalJadwal()">
                 <i class="fa-solid fa-plus me-1"></i> Input Jadwal
@@ -182,15 +181,14 @@
               <table class="table table-hover table-bordered align-middle" style="font-size: 0.9rem;">
                 <thead class="table-light text-center">
                   <tr>
-                    <th width="12%">Hari</th>
-                    <th width="29%">Guru Piket</th>
-                    <th width="29%">Guru Kelas</th>
-                    <th width="16%">Security</th>
-                    <th width="14%">Aksi</th>
+                    <th width="15%">Hari</th>
+                    <th width="45%">Guru Piket</th>
+                    <th width="25%">Security</th>
+                    <th width="15%">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="tbodyJadwal">
-                  <tr><td colspan="5" class="text-center py-4 text-muted">Memuat jadwal piket...</td></tr>
+                  <tr><td colspan="4" class="text-center py-4 text-muted">Memuat jadwal piket...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -335,7 +333,7 @@
     </div>
   </div>
 
-  <!-- MODAL INPUT / EDIT JADWAL PIKET HARIAN -->
+  <!-- MODAL INPUT / EDIT JADWAL PIKET (GURU PIKET & SECURITY) -->
   <div class="modal fade" id="modalJadwal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content" style="border-radius: 16px;">
@@ -371,27 +369,13 @@
                   <i class="fa-solid fa-plus"></i> Tambahkan
                 </button>
               </div>
-              <textarea id="jadwalGuruPiket" class="form-control form-control-sm" rows="2" placeholder="Klik + Tambahkan di atas atau ketik manual nama Guru Piket..."></textarea>
-            </div>
-
-            <!-- PILIH GURU KELAS -->
-            <div class="mb-3">
-              <label class="form-label fw-bold small text-success">2. Guru Kelas</label>
-              <div class="input-group input-group-sm mb-2">
-                <select id="pilihGuruKelas" class="form-select">
-                  <option value="">-- Pilih dari Daftar Guru --</option>
-                </select>
-                <button type="button" class="btn btn-outline-success fw-bold" onclick="tambahKeDaftar('pilihGuruKelas', 'jadwalGuruKelas')">
-                  <i class="fa-solid fa-plus"></i> Tambahkan
-                </button>
-              </div>
-              <textarea id="jadwalGuruKelas" class="form-control form-control-sm" rows="2" placeholder="Klik + Tambahkan di atas atau ketik manual nama Guru Kelas..."></textarea>
+              <textarea id="jadwalGuruPiket" class="form-control form-control-sm" rows="2" placeholder="Klik + Tambahkan di atas atau ketik manual nama Guru Piket..." required></textarea>
             </div>
 
             <!-- INPUT PETUGAS SECURITY -->
             <div class="mb-4">
-              <label class="form-label fw-bold small text-dark">3. Petugas Security</label>
-              <input type="text" id="jadwalSecurity" class="form-control form-control-sm" placeholder="Contoh: Bpk. Eko Santoso">
+              <label class="form-label fw-bold small text-dark">2. Petugas Security</label>
+              <input type="text" id="jadwalSecurity" class="form-control form-control-sm" placeholder="Contoh: Bpk. Eko Santoso" required>
             </div>
 
             <button type="submit" id="btnSimpanJadwal" class="btn btn-primary w-100 fw-bold py-2">
@@ -442,7 +426,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // GANTI DENGAN URL DEPLOYMENT APPS SCRIPT PIKET GURU ANDA (SAMA SEPERTI DI piket.html / guru.html)
+    // GANTI DENGAN URL DEPLOYMENT APPS SCRIPT PIKET GURU ANDA
     const RAW_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
     const WEB_APP_URL = RAW_WEB_APP_URL.replace(/\/u\/\d+\//, '/');
 
@@ -450,7 +434,6 @@
     let parsedExcelRows = [];
     let modSiswa, modImport, modGuru, modJadwal, modAdmin;
 
-    // Helper SweetAlert2 Toast & Popup
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',
@@ -497,7 +480,7 @@
       })
       .catch(() => {
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i> MASUK PANEL ADMIN';
-        Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Gagal terhubung ke server Apps Script! Pastikan URL API sudah benar.', confirmButtonColor: '#1e3a8a' });
+        Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Gagal terhubung ke server Apps Script!', confirmButtonColor: '#1e3a8a' });
       });
     });
 
@@ -526,7 +509,7 @@
     }
 
     function muatSemuaData() {
-      fetch(`${WEB_APP_URL}?action=getAdminPiketData`)
+      fetch(`${WEB_APP_URL}?action=getAdminPiketData&_t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(res => {
           dataSiswa  = res.siswa || [];
@@ -540,11 +523,7 @@
           selKelas.innerHTML = '<option value="">Semua Kelas</option>' + kelasUnik.map(k => `<option value="${k}">${k}</option>`).join('');
           selKelas.value = curVal;
 
-          const opsiGuru = '<option value="">-- Pilih dari Daftar Guru --</option>' +
-            dataGuru.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
-          document.getElementById('pilihGuruPiket').innerHTML = opsiGuru;
-          document.getElementById('pilihGuruKelas').innerHTML = opsiGuru;
-
+          isiDropdownGuruJadwal();
           filterTabelSiswa();
           renderGuru(dataGuru);
           renderJadwal(dataJadwal);
@@ -728,11 +707,17 @@
       }, 'btnSimpanGuru', modGuru);
     });
 
-    // --- 3. RENDER, INPUT, EDIT, & HAPUS JADWAL PIKET (SENIN - JUMAT) ---
+    // --- 3. RENDER, INPUT, EDIT, & HAPUS JADWAL PIKET (GURU PIKET & SECURITY) ---
+    function isiDropdownGuruJadwal() {
+      const opsiGuru = '<option value="">-- Pilih dari Daftar Guru --</option>' +
+        dataGuru.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
+      document.getElementById('pilihGuruPiket').innerHTML = opsiGuru;
+    }
+
     function renderJadwal(list) {
       const tbody = document.getElementById('tbodyJadwal');
       if (!list || list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada data jadwal. Klik tombol <b>+ Input Jadwal</b> di kanan atas untuk menambahkan.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Belum ada data jadwal. Klik tombol <b>+ Input Jadwal</b> di kanan atas untuk menambahkan.</td></tr>';
         return;
       }
 
@@ -743,7 +728,6 @@
         <tr>
           <td class="text-center fw-bold text-primary">${j.hari}</td>
           <td>${j.guruPiket ? j.guruPiket.replace(/\n/g, '<br>') : '<span class="text-muted fst-italic">-</span>'}</td>
-          <td>${j.guruKelas ? j.guruKelas.replace(/\n/g, '<br>') : '<span class="text-muted fst-italic">-</span>'}</td>
           <td class="text-center fw-semibold">${j.security || '<span class="text-muted fst-italic">-</span>'}</td>
           <td class="text-center text-nowrap">
             <button class="btn btn-sm btn-warning" title="Edit Jadwal" onclick="editJadwal(${j.rowIndex})"><i class="fa-solid fa-pen"></i></button>
@@ -753,30 +737,10 @@
       `).join('');
     }
 
-    function isiDropdownGuruJadwal() {
-      const opsiGuru = '<option value="">-- Pilih dari Daftar Guru --</option>' +
-        dataGuru.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
-      document.getElementById('pilihGuruPiket').innerHTML = opsiGuru;
-      document.getElementById('pilihGuruKelas').innerHTML = opsiGuru;
-    }
-
     function bukaModalJadwal() {
       document.getElementById('judulModalJadwal').innerText = "Input Jadwal Piket Baru";
       document.getElementById('jadwalRowIndex').value = "";
       document.getElementById('formJadwal').reset();
-      isiDropdownGuruJadwal();
-      modJadwal.show();
-    }
-
-    function editJadwal(rIdx) {
-      const j = dataJadwal.find(x => x.rowIndex === rIdx);
-      if (!j) return;
-      document.getElementById('judulModalJadwal').innerText = "Edit Jadwal Piket - Hari " + j.hari;
-      document.getElementById('jadwalRowIndex').value = j.rowIndex;
-      document.getElementById('jadwalHari').value = j.hari;
-      document.getElementById('jadwalGuruPiket').value = j.guruPiket;
-      document.getElementById('jadwalGuruKelas').value = j.guruKelas;
-      document.getElementById('jadwalSecurity').value = j.security;
       isiDropdownGuruJadwal();
       modJadwal.show();
     }
@@ -798,18 +762,27 @@
       sel.value = "";
     }
 
+    function editJadwal(rIdx) {
+      const j = dataJadwal.find(x => x.rowIndex === rIdx);
+      if (!j) return;
+      document.getElementById('judulModalJadwal').innerText = "Edit Jadwal Piket - Hari " + j.hari;
+      document.getElementById('jadwalRowIndex').value = j.rowIndex;
+      document.getElementById('jadwalHari').value = j.hari;
+      document.getElementById('jadwalGuruPiket').value = j.guruPiket;
+      document.getElementById('jadwalSecurity').value = j.security;
+      isiDropdownGuruJadwal();
+      modJadwal.show();
+    }
+
     document.getElementById('formJadwal').addEventListener('submit', function(e) {
       e.preventDefault();
-      // Otomatis ambil nilai dropdown jika admin lupa klik "+ Tambahkan" dan kotak teks masih kosong
       const gpText = document.getElementById('jadwalGuruPiket').value.trim() || document.getElementById('pilihGuruPiket').value;
-      const gkText = document.getElementById('jadwalGuruKelas').value.trim() || document.getElementById('pilihGuruKelas').value;
 
       kirimPost({
         action: "simpanJadwalPiket",
         rowIndex: document.getElementById('jadwalRowIndex').value,
         hari: document.getElementById('jadwalHari').value,
         guruPiket: gpText,
-        guruKelas: gkText,
         security: document.getElementById('jadwalSecurity').value
       }, 'btnSimpanJadwal', modJadwal);
     });
