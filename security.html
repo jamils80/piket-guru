@@ -15,10 +15,18 @@
     <!-- FORM PENGAJUAN IZIN MASUK BY SECURITY -->
     <div class="card shadow mb-4 border-0" style="border-radius: 16px;">
       <div class="card-header bg-primary text-white text-center py-4" style="border-radius: 16px 16px 0 0;">
-        <div id="logoContainer"></div>
+        <div id="logoContainer">
+          <img src="https://lh3.googleusercontent.com/d/1gj5Xy_Gk9UHulau-_vf3IZuYlQtQN6Jz" class="logo-beranda" style="max-height: 75px; width: auto;" alt="Logo SMKN 1 Purwoasri">
+        </div>
         <h5 class="mb-0 fw-bold text-uppercase">🛡️ Form Pengajuan Izin Masuk (Security)</h5>
       </div>
       <div class="card-body p-4">
+        <!-- INFO JADWAL SECURITY HARI INI -->
+        <div id="boxInfoSecurityHariIni" class="alert alert-primary small d-none mb-3">
+          <strong>🛡️ Jadwal Security Hari <span id="teksHariSecurity"></span>:</strong><br>
+          <span id="teksSecurityJadwal" class="fw-semibold"></span>
+        </div>
+
         <form id="formSecurity">
           <div class="mb-3">
             <label class="form-label fw-bold">Nama Security / Petugas</label>
@@ -43,7 +51,7 @@
             <label class="form-label fw-bold">Alasan / Keterangan Terlambat</label>
             <textarea class="form-control" id="alasan" rows="3" required></textarea>
           </div>
-          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Kirim Pengajuan Izin Masuk</button>
+          <button type="submit" id="btnSubmitSecurity" class="btn btn-primary w-100 py-2 fw-bold">Kirim Pengajuan Izin Masuk</button>
         </form>
       </div>
     </div>
@@ -76,31 +84,103 @@
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
 
+    let jadwalHariIni = null;
+    let jadwalSudahDimuat = false;
+    const namaHariIni = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][new Date().getDay()];
+
+    function normalisasiHari(str) {
+      return String(str || "").replace(/['’`\s]/g, "").toLowerCase();
+    }
+
     window.onload = function() {
-      // Fetch Logo dari Server (sama seperti piket.html)
+      // 1. Sinkronisasi Logo dari Server
       fetch(`${WEB_APP_URL}?action=getAppAssets`)
         .then(res => res.json())
         .then(assets => {
           if (assets && assets.logoBeranda) {
             document.getElementById('logoContainer').innerHTML = `<img src="${assets.logoBeranda}" class="logo-beranda" alt="Logo">`;
           }
+        }).catch(() => {});
+
+      // 2. Ambil Jadwal Piket (Utama: getJadwalPiket, Cadangan: getAdminPiketData)
+      const fetchJadwal = fetch(`${WEB_APP_URL}?action=getJadwalPiket&_t=${new Date().getTime()}`)
+        .then(r => r.json())
+        .then(res => {
+          if (Array.isArray(res)) return res;
+          return fetch(`${WEB_APP_URL}?action=getAdminPiketData&_t=${new Date().getTime()}`)
+            .then(r2 => r2.json())
+            .then(res2 => res2.jadwal || []);
+        })
+        .catch(() => []);
+
+      // 3. Muat Jadwal & Master Data
+      Promise.all([
+        fetchJadwal,
+        fetch(`${WEB_APP_URL}?action=getMasterData`).then(r => r.json())
+      ]).then(([listJadwal, data]) => {
+        jadwalSudahDimuat = true;
+        const gSel = document.getElementById('namaPetugas');
+        gSel.innerHTML = '<option value="" selected disabled>Pilih Nama Security...</option>';
+
+        if (Array.isArray(listJadwal)) {
+          jadwalHariIni = listJadwal.find(j => normalisasiHari(j.hari) === normalisasiHari(namaHariIni)) || null;
+          if (jadwalHariIni && jadwalHariIni.security && jadwalHariIni.security.trim() !== "") {
+            document.getElementById('teksHariSecurity').innerText = namaHariIni;
+            document.getElementById('teksSecurityJadwal').innerText = jadwalHariIni.security;
+            document.getElementById('boxInfoSecurityHariIni').classList.remove('d-none');
+
+            const daftarSec = jadwalHariIni.security.split(/[,\/;\n]/).map(s => s.trim()).filter(Boolean);
+            daftarSec.forEach(secName => {
+              gSel.innerHTML += `<option value="${secName}">🛡️ ${secName} (Jadwal Hari Ini)</option>`;
+            });
+          }
+        }
+
+        // Tetap tampilkan daftar petugas lain sebagai opsi pembanding
+        (data.guru || []).forEach(g => {
+          gSel.innerHTML += `<option value="${g}">${g}</option>`;
         });
 
-      // Fetch Master Data
-      fetch(`${WEB_APP_URL}?action=getMasterData`)
-        .then(res => res.json())
-        .then(data => {
-          const gSel = document.getElementById('namaPetugas');
-          gSel.innerHTML = '<option value="" selected disabled>Pilih Nama Security...</option>';
-          data.guru.forEach(g => { gSel.innerHTML += `<option value="${g}">${g}</option>`; });
-
-          const kSel = document.getElementById('kelas');
-          kSel.innerHTML = '<option value="" selected disabled>Pilih Kelas...</option>';
-          data.kelas.forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
-        });
+        const kSel = document.getElementById('kelas');
+        kSel.innerHTML = '<option value="" selected disabled>Pilih Kelas...</option>';
+        (data.kelas || []).forEach(k => { kSel.innerHTML += `<option value="${k}">${k}</option>`; });
+      }).catch(() => {
+        jadwalSudahDimuat = true;
+        Swal.fire('Error', 'Gagal memuat data master & jadwal dari server.', 'error');
+      });
 
       loadRiwayat();
     };
+
+    // Validasi Tegas Kesesuaian Nama Security dengan Jadwal Hari Ini
+    function validasiSecurity(namaDipilih) {
+      if (!jadwalSudahDimuat) {
+        Swal.fire('Tunggu Sebentar', 'Sedang memuat jadwal piket hari ini, silakan coba beberapa detik lagi.', 'info');
+        return false;
+      }
+
+      if (jadwalHariIni && jadwalHariIni.security && jadwalHariIni.security.trim() !== "") {
+        const daftarSecSah = jadwalHariIni.security
+          .split(/[,\/;\n]/)
+          .map(s => s.trim().toLowerCase())
+          .filter(Boolean);
+
+        const inputNama = String(namaDipilih || "").trim().toLowerCase();
+        const cocok = daftarSecSah.some(sec => sec === inputNama);
+
+        if (!cocok) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Nama Security Tidak Sesuai!',
+            html: `Nama security yang Anda pilih <b>tidak sesuai dengan jadwal piket hari ${namaHariIni}</b>.<br><br>Silakan gunakan nama security yang sesuai dengan jadwal piket:<br><span class="badge bg-primary text-wrap mt-2 p-2" style="font-size:0.9rem;">${jadwalHariIni.security}</span>`,
+            confirmButtonText: 'Mengerti, Saya Ganti',
+            confirmButtonColor: '#0d6efd'
+          });
+          return false;
+        }
+      }
+      return true;
+    }
 
     function loadSiswa() {
       const kelas = document.getElementById('kelas').value;
@@ -118,9 +198,18 @@
 
     document.getElementById('formSecurity').addEventListener('submit', function(e) {
       e.preventDefault();
+      const namaSecurity = document.getElementById('namaPetugas').value;
+
+      // Blokir jika nama security tidak sesuai jadwal piket hari ini
+      if (!validasiSecurity(namaSecurity)) return;
+
+      const btn = document.getElementById('btnSubmitSecurity');
+      btn.disabled = true;
+      btn.innerText = "Mengirim...";
+
       const payload = {
         action: "simpanPengajuanGuruKelas",
-        petugas: document.getElementById('namaPetugas').value,
+        petugas: namaSecurity,
         kelas: document.getElementById('kelas').value,
         nama: document.getElementById('nama').value,
         jenisIzin: document.getElementById('jenisIzin').value,
@@ -130,14 +219,27 @@
       fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
+          btn.disabled = false;
+          btn.innerText = "Kirim Pengajuan Izin Masuk";
+
+          if (res.success === false) {
+            Swal.fire('Peringatan Jadwal', res.message, 'warning');
+            return;
+          }
           Swal.fire('Berhasil!', 'Pengajuan izin masuk dikirim. Kode ID: ' + res.id, 'success');
           document.getElementById('formSecurity').reset();
+          document.getElementById('nama').disabled = true;
           loadRiwayat();
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.innerText = "Kirim Pengajuan Izin Masuk";
+          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengirim pengajuan.', 'error');
         });
     });
 
     function loadRiwayat() {
-      fetch(`${WEB_APP_URL}?action=getRiwayatIzinGuru`)
+      fetch(`${WEB_APP_URL}?action=getRiwayatIzinGuru&_t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(list => {
           const tbody = document.getElementById('bodyRiwayat');
@@ -175,14 +277,30 @@
         return;
       }
 
+      // Blokir jika nama security tidak sesuai jadwal piket hari ini
+      if (!validasiSecurity(namaSecurity)) return;
+
+      Swal.fire({
+        title: 'Memverifikasi...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
       fetch(WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify({ action: "konfirmasiSelesaiIzin", idIzin: idIzin, namaPetugas: namaSecurity })
       })
       .then(res => res.json())
       .then(res => {
+        if (res.success === false) {
+          Swal.fire('Peringatan Jadwal', res.message, 'warning');
+          return;
+        }
         Swal.fire('Berhasil!', res.message, 'success');
         loadRiwayat();
+      })
+      .catch(() => {
+        Swal.fire('Error', 'Gagal memverifikasi perizinan.', 'error');
       });
     }
   </script>
