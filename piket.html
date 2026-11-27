@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jurnal Piket Guru</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; }
     .card { background-color: rgba(255, 255, 255, 0.95); border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); }
@@ -20,11 +21,19 @@
     <!-- KARTU FORM UTAMA -->
     <div class="card shadow mb-4">
       <div class="card-header py-4">
-        <div id="logoContainer"></div>
+        <div id="logoContainer">
+          <img src="https://lh3.googleusercontent.com/d/1gj5Xy_Gk9UHulau-_vf3IZuYlQtQN6Jz" class="logo-beranda" style="max-height: 75px; width: auto;" alt="Logo SMKN 1 Purwoasri">
+        </div>
         <h4 class="mb-1 text-uppercase fw-bold" id="judulUtama">JURNAL PIKET GURU</h4>
         <h5 class="fw-semibold" id="subJudulUtama">TAHUN PELAJARAN</h5>
       </div>
       <div class="card-body p-4">
+        <!-- INFO JADWAL PIKET HARI INI -->
+        <div id="boxInfoJadwalHariIni" class="alert alert-primary small d-none mb-3">
+          <strong>📅 Jadwal Guru Piket Hari <span id="teksHariIni"></span>:</strong><br>
+          <span id="teksGuruPiketJadwal" class="fw-semibold"></span>
+        </div>
+
         <div id="alertSuccess" class="alert alert-success d-none" role="alert">
           Data izin berhasil dicatat! ID: <strong id="resId"></strong>
           <button type="button" class="btn btn-sm btn-dark ms-2 fw-bold" id="btnCetakTerakhir" onclick="cetakNotaLangsung()">🖨️ Cetak Nota</button>
@@ -161,6 +170,8 @@
     let modalGuruObj = null;
     let lastDataIzinSimpan = null;
     let appAssets = {};
+    let jadwalHariIni = null;
+    const namaHariIni = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][new Date().getDay()];
 
     window.onload = function() {
       modalGuruObj = new bootstrap.Modal(document.getElementById('modalInputGuru'));
@@ -180,7 +191,21 @@
           if (assets.logoBeranda) {
             document.getElementById('logoContainer').innerHTML = `<img src="${assets.logoBeranda}" class="logo-beranda" alt="Logo">`;
           }
-        });
+        }).catch(() => {});
+
+      // Fetch Jadwal Piket Hari Ini
+      fetch(`${WEB_APP_URL}?action=getJadwalPiket&_t=${new Date().getTime()}`)
+        .then(res => res.json())
+        .then(list => {
+          if (Array.isArray(list)) {
+            jadwalHariIni = list.find(j => (j.hari || '').trim().toLowerCase() === namaHariIni.toLowerCase()) || null;
+            if (jadwalHariIni && jadwalHariIni.guruPiket) {
+              document.getElementById('teksHariIni').innerText = namaHariIni;
+              document.getElementById('teksGuruPiketJadwal').innerText = jadwalHariIni.guruPiket;
+              document.getElementById('boxInfoJadwalHariIni').classList.remove('d-none');
+            }
+          }
+        }).catch(() => {});
 
       // Fetch Master Data
       fetch(`${WEB_APP_URL}?action=getMasterData`)
@@ -198,6 +223,27 @@
       loadAntrean();
     };
 
+    // Validasi Kesesuaian Guru Piket dengan Jadwal Hari Ini
+    function validasiGuruPiket(namaDipilih) {
+      if (!jadwalHariIni || !jadwalHariIni.guruPiket || jadwalHariIni.guruPiket.trim() === "") {
+        return true; // Jika jadwal hari ini belum diatur di admin, izinkan lanjut
+      }
+      const daftarSah = jadwalHariIni.guruPiket.toLowerCase();
+      const inputNama = (namaDipilih || "").trim().toLowerCase();
+
+      if (inputNama === "" || !daftarSah.includes(inputNama)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Nama Guru Piket Tidak Sesuai!',
+          html: `Nama guru piket yang Anda pilih <b>tidak sesuai dengan jadwal piket hari ${namaHariIni}</b>.<br><br>Silakan gunakan nama guru piket yang sesuai dengan jadwal piket:<br><span class="badge bg-primary text-wrap mt-2 p-2" style="font-size:0.9rem;">${jadwalHariIni.guruPiket}</span>`,
+          confirmButtonText: 'Mengerti, Saya Ganti',
+          confirmButtonColor: '#0d6efd'
+        });
+        return false;
+      }
+      return true;
+    }
+
     function loadSiswa() {
       const kelas = document.getElementById('kelas').value;
       const sSel = document.getElementById('nama');
@@ -214,12 +260,17 @@
 
     document.getElementById('piketForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      const guruDipilih = document.getElementById('guruPiket').value;
+
+      // Cek kesesuaian jadwal guru piket sebelum mengirim
+      if (!validasiGuruPiket(guruDipilih)) return;
+
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
 
       const payload = {
         action: "simpanPerizinan",
-        guruPiket: document.getElementById('guruPiket').value,
+        guruPiket: guruDipilih,
         kelas: document.getElementById('kelas').value,
         nama: document.getElementById('nama').value,
         jenisIzin: document.getElementById('jenisIzin').value,
@@ -229,13 +280,18 @@
       fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
+          btn.disabled = false;
+          if (res.success === false) {
+            Swal.fire('Peringatan Jadwal', res.message, 'warning');
+            return;
+          }
           document.getElementById('resId').innerText = res.id;
           document.getElementById('alertSuccess').classList.remove('d-none');
           lastDataIzinSimpan = { ...payload, id: res.id, timestamp: new Date().toLocaleString('id-ID'), status: 'Disetujui' };
           cetakNota(lastDataIzinSimpan);
           document.getElementById('piketForm').reset();
-          btn.disabled = false;
-        });
+        })
+        .catch(() => { btn.disabled = false; });
     });
 
     function bukaModalIzinGuru() {
@@ -258,7 +314,7 @@
         .then(() => {
           modalGuruObj.hide();
           document.getElementById('formIzinGuru').reset();
-          alert("Data izin guru berhasil dicatat!");
+          Swal.fire('Berhasil!', 'Data izin guru berhasil dicatat!', 'success');
         });
     });
 
@@ -285,14 +341,27 @@
 
     function setujuiIzin(idIzin) {
       const guruPiket = document.getElementById('guruPiket').value;
-      if (!guruPiket) { alert("Pilih Guru Piket terlebih dahulu!"); return; }
+      if (!guruPiket) {
+        Swal.fire('Perhatian', 'Pilih Nama Guru Piket di form atas terlebih dahulu!', 'warning');
+        return;
+      }
+
+      // Cek kesesuaian jadwal guru piket sebelum menyetujui
+      if (!validasiGuruPiket(guruPiket)) return;
 
       fetch(WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify({ action: "setujuiIzinPiket", idIzin: idIzin, namaGuruPiket: guruPiket })
       })
       .then(res => res.json())
-      .then(() => { loadAntrean(); });
+      .then(res => {
+        if (res.success === false) {
+          Swal.fire('Peringatan Jadwal', res.message, 'warning');
+          return;
+        }
+        Swal.fire('Disetujui!', 'Izin siswa telah disetujui oleh ' + guruPiket, 'success');
+        loadAntrean();
+      });
     }
 
     function cetakNotaLangsung() { if (lastDataIzinSimpan) cetakNota(lastDataIzinSimpan); }
@@ -318,11 +387,14 @@
 
     function cetakJurnalHarian() {
       const tgl = document.getElementById('tglCetak').value;
-      if (!tgl) return alert("Pilih tanggal!");
+      if (!tgl) {
+        Swal.fire('Perhatian', 'Pilih tanggal jurnal terlebih dahulu!', 'warning');
+        return;
+      }
       fetch(`${WEB_APP_URL}?action=getLaporanHarian&tgl=${tgl}`)
         .then(res => res.json())
         .then(laporan => {
-          alert(`Laporan siap dicetak. Siswa: ${laporan.siswa.length}, Guru: ${laporan.guru.length}`);
+          Swal.fire('Laporan Siap', `Data ditemukan — Siswa: ${laporan.siswa.length}, Guru: ${laporan.guru.length}`, 'info');
         });
     }
   </script>
