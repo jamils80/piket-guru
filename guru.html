@@ -14,7 +14,9 @@
   <div class="container" style="max-width: 600px;">
     <div class="card shadow mb-4 border-0" style="border-radius: 16px;">
       <div class="card-header bg-success text-white text-center py-4" style="border-radius: 16px 16px 0 0;">
-        <div id="logoContainer"></div>
+        <div id="logoContainer">
+          <img src="https://lh3.googleusercontent.com/d/1gj5Xy_Gk9UHulau-_vf3IZuYlQtQN6Jz" class="logo-beranda" style="max-height: 75px; width: auto;" alt="Logo SMKN 1 Purwoasri">
+        </div>
         <h5 class="mb-1 fw-bold text-uppercase">Form Pengajuan Izin Keluar</h5>
         <small>Pengajuan Guru Pengajar ke Guru Piket</small>
       </div>
@@ -54,14 +56,15 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztosb_1Ihgkw411vgyoDiZUHI-pQgq4qv07KtLQ2QZhaHTg2222IlaeVQuc-7Z8k8jjw/exec";
 
     window.onload = function() {
-      // Fetch Logo dari Server (sama seperti piket.html)
+      // Sinkronisasi Logo dari Server (jika ada pembaruan di sheet Assets)
       fetch(`${WEB_APP_URL}?action=getAppAssets`)
         .then(res => res.json())
         .then(assets => {
           if (assets && assets.logoBeranda) {
             document.getElementById('logoContainer').innerHTML = `<img src="${assets.logoBeranda}" class="logo-beranda" alt="Logo">`;
           }
-        });
+        })
+        .catch(() => {});
 
       // Fetch Master Data
       fetch(`${WEB_APP_URL}?action=getMasterData`)
