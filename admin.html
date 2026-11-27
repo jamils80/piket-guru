@@ -753,10 +753,31 @@
       `).join('');
     }
 
+    function isiDropdownGuruJadwal() {
+      const opsiGuru = '<option value="">-- Pilih dari Daftar Guru --</option>' +
+        dataGuru.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
+      document.getElementById('pilihGuruPiket').innerHTML = opsiGuru;
+      document.getElementById('pilihGuruKelas').innerHTML = opsiGuru;
+    }
+
     function bukaModalJadwal() {
       document.getElementById('judulModalJadwal').innerText = "Input Jadwal Piket Baru";
       document.getElementById('jadwalRowIndex').value = "";
       document.getElementById('formJadwal').reset();
+      isiDropdownGuruJadwal();
+      modJadwal.show();
+    }
+
+    function editJadwal(rIdx) {
+      const j = dataJadwal.find(x => x.rowIndex === rIdx);
+      if (!j) return;
+      document.getElementById('judulModalJadwal').innerText = "Edit Jadwal Piket - Hari " + j.hari;
+      document.getElementById('jadwalRowIndex').value = j.rowIndex;
+      document.getElementById('jadwalHari').value = j.hari;
+      document.getElementById('jadwalGuruPiket').value = j.guruPiket;
+      document.getElementById('jadwalGuruKelas').value = j.guruKelas;
+      document.getElementById('jadwalSecurity').value = j.security;
+      isiDropdownGuruJadwal();
       modJadwal.show();
     }
 
@@ -775,18 +796,6 @@
         txt.value = current + ", " + sel.value;
       }
       sel.value = "";
-    }
-
-    function editJadwal(rIdx) {
-      const j = dataJadwal.find(x => x.rowIndex === rIdx);
-      if (!j) return;
-      document.getElementById('judulModalJadwal').innerText = "Edit Jadwal Piket - Hari " + j.hari;
-      document.getElementById('jadwalRowIndex').value = j.rowIndex;
-      document.getElementById('jadwalHari').value = j.hari;
-      document.getElementById('jadwalGuruPiket').value = j.guruPiket;
-      document.getElementById('jadwalGuruKelas').value = j.guruKelas;
-      document.getElementById('jadwalSecurity').value = j.security;
-      modJadwal.show();
     }
 
     document.getElementById('formJadwal').addEventListener('submit', function(e) {
